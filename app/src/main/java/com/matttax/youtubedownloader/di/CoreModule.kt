@@ -1,9 +1,9 @@
 package com.matttax.youtubedownloader.di
 
-import com.matttax.youtubedownloader.domain.DataExtractor
-import com.matttax.youtubedownloader.domain.VideoSearcher
-import com.matttax.youtubedownloader.youtube.DataExtractorImpl
-import com.matttax.youtubedownloader.youtube.VideoSearcherImpl
+import com.matttax.youtubedownloader.core.DataExtractor
+import com.matttax.youtubedownloader.core.VideoSearcher
+import com.matttax.youtubedownloader.youtube.extraction.DataExtractorImpl
+import com.matttax.youtubedownloader.youtube.search.VideoSearcherImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

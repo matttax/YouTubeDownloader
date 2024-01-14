@@ -1,8 +1,8 @@
 package com.matttax.youtubedownloader
 
 import com.github.kiulian.downloader.YoutubeDownloader
-import com.matttax.youtubedownloader.domain.config.SearchConfig
-import com.matttax.youtubedownloader.youtube.VideoSearcherImpl
+import com.matttax.youtubedownloader.core.config.SearchConfig
+import com.matttax.youtubedownloader.youtube.search.VideoSearcherImpl
 import org.junit.Test
 
 /**

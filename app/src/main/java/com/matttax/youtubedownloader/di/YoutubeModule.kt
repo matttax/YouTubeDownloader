@@ -1,12 +1,12 @@
 package com.matttax.youtubedownloader.di
 
 import com.github.kiulian.downloader.YoutubeDownloader
-import com.matttax.youtubedownloader.domain.DataExtractor
-import com.matttax.youtubedownloader.domain.VideoSearcher
-import com.matttax.youtubedownloader.domain.usecases.ExtractDataUseCase
-import com.matttax.youtubedownloader.domain.usecases.SearchVideosUseCase
-import com.matttax.youtubedownloader.youtube.DataExtractorImpl
-import com.matttax.youtubedownloader.youtube.VideoSearcherImpl
+import com.matttax.youtubedownloader.core.DataExtractor
+import com.matttax.youtubedownloader.core.VideoSearcher
+import com.matttax.youtubedownloader.youtube.usecases.ExtractDataUseCase
+import com.matttax.youtubedownloader.youtube.usecases.SearchVideosUseCase
+import com.matttax.youtubedownloader.youtube.extraction.DataExtractorImpl
+import com.matttax.youtubedownloader.youtube.search.VideoSearcherImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.Image
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -12,8 +13,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.matttax.youtubedownloader.R
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
 import kotlinx.coroutines.flow.map
 
@@ -25,7 +28,7 @@ fun MediaData(viewModel: SearchViewModel) {
     val isLoadingPage by viewModel.isLoadingPage.collectAsState()
     var selectedVideo by rememberSaveable { mutableStateOf<Int?>(null) }
 
-    val videoReady = viewModel.currentStreamable.map { it != null }
+    val currentStreamable by viewModel.currentStreamable.collectAsState()
 
     Column {
         TextField(
@@ -74,7 +77,13 @@ fun MediaData(viewModel: SearchViewModel) {
                     }
                     if (it == selectedVideo) {
                         Column {
-                            Player(videoReady, viewModel.exoPlayer)
+                            currentStreamable?.metadata?.let { data ->
+                                Metadata(data = data)
+                            }
+                            Player(
+                                videoReady = viewModel.currentStreamable.map { streamable -> streamable != null },
+                                exoPlayer = viewModel.exoPlayer
+                            )
                             StreamingOptions(
                                 uriSelectionState = viewModel.uriSelectionState,
                                 onMediaFormatChanged = viewModel::onMediaFormatChanged,

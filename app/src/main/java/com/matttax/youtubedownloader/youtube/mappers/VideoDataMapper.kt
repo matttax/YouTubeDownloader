@@ -17,7 +17,7 @@ object VideoDataMapper {
         author = author() ?: "Unknown",
         viewCount = viewCount(),
         isLive = isLive,
-        thumbnailUri = thumbnails().last() ?: ""
+        thumbnailUri = thumbnails().first() ?: ""
     )
 
     fun VideoDetails.toYoutubeVideoMetadata() = YoutubeVideoMetadata(
@@ -27,7 +27,7 @@ object VideoDataMapper {
         author = author() ?: "Unknown",
         viewCount = viewCount(),
         isLive = isLive,
-        thumbnailUri = thumbnails().last() ?: ""
+        thumbnailUri = thumbnails().first() ?: ""
     )
 
     fun VideoInfo.toYoutubeStreamable() = YoutubeStreamable (

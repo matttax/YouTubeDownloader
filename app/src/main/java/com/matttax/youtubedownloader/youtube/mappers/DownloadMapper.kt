@@ -4,7 +4,7 @@ import com.matttax.youtubedownloader.core.model.YoutubeStreamable
 import com.matttax.youtubedownloader.youtube.download.model.DownloadLink
 import com.matttax.youtubedownloader.youtube.download.model.MediaStreamingOptions
 
-fun YoutubeStreamable.getVideoDownloadOptions(): MediaStreamingOptions {
+fun YoutubeStreamable.getStreamingOptions(): MediaStreamingOptions {
     val videoLinks = videoFormats
         .sortedBy { it.quality.pixels }
         .groupBy { it.quality }

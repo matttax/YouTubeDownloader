@@ -4,6 +4,8 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.matttax.youtubedownloader.core.model.Format
 import com.matttax.youtubedownloader.youtube.download.model.MediaStreamingOptions
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 
 class PlayerDelegate @Inject constructor(
@@ -17,8 +19,17 @@ class PlayerDelegate @Inject constructor(
     private var _playing: Format? = null
     private var _streamingOptions: MediaStreamingOptions? = null
 
+    private val _isVideoReady = MutableStateFlow(false)
+    val isVideoReady = _isVideoReady.asStateFlow()
+
     init {
         exoPlayer.prepare()
+        exoPlayer.addListener(
+            PlayerReadyListener(
+                onReady = { _isVideoReady.value = true },
+                onUnready = { _isVideoReady.value = false }
+            )
+        )
     }
 
     fun play(format: Format, savePosition: Boolean = false) {

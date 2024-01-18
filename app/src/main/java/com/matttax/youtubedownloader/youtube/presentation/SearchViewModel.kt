@@ -14,9 +14,7 @@ import com.matttax.youtubedownloader.youtube.usecases.ExtractDataUseCase
 import com.matttax.youtubedownloader.youtube.usecases.SearchVideosUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -45,6 +43,10 @@ class SearchViewModel @Inject constructor(
     val currentStreamable = _currentStreamable.asStateFlow()
     val searchConfig = _searchConfig.asStateFlow()
     val uriSelectionState = _uriSelectionState.asStateFlow()
+
+    val isVideoReady = player.isVideoReady.combine(
+        _currentStreamable.map { it != null }
+    ) { playerReady, streamableExists -> playerReady && streamableExists }
 
     init {
         onSearch("")

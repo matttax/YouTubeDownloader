@@ -78,7 +78,7 @@ fun MediaData(viewModel: SearchViewModel) {
                                 Metadata(data = data)
                             }
                             Player(
-                                videoReady = viewModel.currentStreamable.map { streamable -> streamable != null },
+                                videoReady = viewModel.isVideoReady,
                                 exoPlayer = viewModel.getExoInstance()
                             )
                             StreamingOptions(

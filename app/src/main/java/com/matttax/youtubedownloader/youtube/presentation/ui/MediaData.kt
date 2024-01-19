@@ -1,21 +1,24 @@
 package com.matttax.youtubedownloader.youtube.presentation.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.matttax.youtubedownloader.youtube.presentation.DownloadState
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
-import kotlinx.coroutines.flow.map
+import com.matttax.youtubedownloader.youtube.presentation.ui.model.toUiModel
 
 @Composable
 fun MediaData(viewModel: SearchViewModel) {
@@ -24,6 +27,10 @@ fun MediaData(viewModel: SearchViewModel) {
     val isSearching by viewModel.isSearching.collectAsState()
     val isLoadingPage by viewModel.isLoadingPage.collectAsState()
     var selectedVideo by rememberSaveable { mutableStateOf<Int?>(null) }
+
+    val downloadState by viewModel.downloadProgressState.collectAsState()
+
+    val videoReady by viewModel.isVideoReady.collectAsState(initial = false)
 
     val currentStreamable by viewModel.currentStreamable.collectAsState()
 
@@ -68,28 +75,63 @@ fun MediaData(viewModel: SearchViewModel) {
                     .navigationBarsPadding()
                     .padding(5.dp),
             ) {
-                items(videoList.size) {
+                items(
+                    count = videoList.size,
+                    key = { videoList[it].id + videoList.size }
+                ) {
                     if (it == videoList.size - 1) {
                         viewModel.onNextPage()
                     }
                     if (it == selectedVideo) {
-                        Column {
-                            currentStreamable?.metadata?.let { data ->
-                                Metadata(data = data)
+                        if (videoReady) {
+                            Column {
+                                currentStreamable?.metadata?.let { data ->
+                                    Metadata(data = data)
+                                }
+                                Player(
+                                    exoPlayer = viewModel.getExoInstance()
+                                )
+                                StreamingOptions(
+                                    uriSelectionState = viewModel.uriSelectionState,
+                                    onMediaFormatChanged = viewModel::onMediaFormatChanged,
+                                    onQualityChanged = viewModel::onQualityChanged,
+                                    onMimeTypeChanged = viewModel::onMimeTypeChanged
+                                )
+                                Spacer(modifier = Modifier.height(5.dp))
+                                Button(
+                                    modifier = Modifier
+                                        .fillMaxWidth(0.7f)
+                                        .align(Alignment.CenterHorizontally)
+                                        .background(
+                                            brush = Brush.horizontalGradient(
+                                                colorStops = downloadState.getGradients()
+                                            ),
+                                            shape = RoundedCornerShape(20.dp)
+                                        )
+                                        .padding(horizontal = 10.dp),
+                                    onClick = { if (!downloadState.isDownloading) viewModel.onDownload() },
+                                    colors = ButtonDefaults.buttonColors(Color.Transparent),
+                                ) {
+                                    Text(
+                                        text = if (!downloadState.isDownloading)
+                                            "Download"
+                                        else "Downloading ${downloadState.progress?.times(100)?.toInt() ?: 0}%",
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
                             }
-                            Player(
-                                videoReady = viewModel.isVideoReady,
-                                exoPlayer = viewModel.getExoInstance()
-                            )
-                            StreamingOptions(
-                                uriSelectionState = viewModel.uriSelectionState,
-                                onMediaFormatChanged = viewModel::onMediaFormatChanged,
-                                onQualityChanged = viewModel::onQualityChanged,
-                                onMimeTypeChanged = viewModel::onMimeTypeChanged
-                            )
+                        } else {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
                         }
                     } else {
-                        MediaItem(videoList[it]) { id ->
+                        MediaItem(videoList[it].toUiModel()) { id ->
                             run {
                                 selectedVideo = it
                                 viewModel.onExtractData(id)
@@ -112,4 +154,11 @@ fun MediaData(viewModel: SearchViewModel) {
             }
         }
     }
+}
+
+fun DownloadState.getGradients(): Array<Pair<Float, Color>> {
+    return arrayOf(
+        (progress ?: 1f) to Color.Red,
+        (progress ?: 1f) to Color.Blue.copy(alpha = 0.3f)
+    )
 }

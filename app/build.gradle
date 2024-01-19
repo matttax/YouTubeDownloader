@@ -5,6 +5,10 @@ plugins {
     id 'dagger.hilt.android.plugin'
 }
 
+kapt {
+    correctErrorTypes true
+}
+
 android {
     namespace 'com.matttax.youtubedownloader'
     compileSdk 34

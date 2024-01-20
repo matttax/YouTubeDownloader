@@ -1,4 +1,4 @@
-package com.matttax.youtubedownloader.youtube.presentation.utils
+package com.matttax.youtubedownloader.youtube.presentation.ui.utils
 
 import com.matttax.youtubedownloader.core.config.Duration
 import com.matttax.youtubedownloader.core.config.SortedBy

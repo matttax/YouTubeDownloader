@@ -1,4 +1,4 @@
-package com.matttax.youtubedownloader.youtube.presentation.utils
+package com.matttax.youtubedownloader.youtube.presentation.ui.utils
 
 data class Options<T>(
     val argumentMap: Map<String, T>,

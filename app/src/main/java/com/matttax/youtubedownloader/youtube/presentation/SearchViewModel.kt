@@ -11,6 +11,8 @@ import com.matttax.youtubedownloader.core.model.*
 import com.matttax.youtubedownloader.player.PlayerDelegate
 import com.matttax.youtubedownloader.youtube.download.MediaDownloader
 import com.matttax.youtubedownloader.youtube.mappers.getStreamingOptions
+import com.matttax.youtubedownloader.youtube.presentation.states.DownloadState
+import com.matttax.youtubedownloader.youtube.presentation.states.UriSelectionState
 import com.matttax.youtubedownloader.youtube.usecases.ExtractDataUseCase
 import com.matttax.youtubedownloader.youtube.usecases.SearchVideosUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,7 +20,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.*
 import javax.inject.Inject
+import kotlin.NoSuchElementException
+import kotlin.collections.HashMap
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
@@ -29,6 +34,8 @@ class SearchViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var lastSearchedText: String? = null
+    private val downloadingCache =
+        Collections.synchronizedMap(HashMap<String, MutableStateFlow<DownloadState>>())
 
     private val _videoList = MutableStateFlow<List<YoutubeVideoMetadata>>(emptyList())
     private val _currentStreamable = MutableStateFlow<YoutubeStreamable?>(null)
@@ -37,7 +44,6 @@ class SearchViewModel @Inject constructor(
     private val _isLoadingPage = MutableStateFlow(false)
     private val _searchConfig = MutableStateFlow(SearchConfig())
     private val _uriSelectionState = MutableStateFlow<UriSelectionState?>(null)
-    private val _downloadProgressState = MutableStateFlow(DownloadState())
 
     val videoList = _videoList.asStateFlow()
     val searchText = _searchText.asStateFlow()
@@ -46,7 +52,6 @@ class SearchViewModel @Inject constructor(
     val currentStreamable = _currentStreamable.asStateFlow()
     val searchConfig = _searchConfig.asStateFlow()
     val uriSelectionState = _uriSelectionState.asStateFlow()
-    val downloadProgressState = _downloadProgressState.asStateFlow()
 
     val isVideoReady = playerDelegate.isVideoReady.combine(
         _currentStreamable.map { it != null }
@@ -108,13 +113,26 @@ class SearchViewModel @Inject constructor(
     }
 
     fun onDownload() {
+        val id = _currentStreamable.value?.metadata?.id ?: return
         playerDelegate.playing?.let {
-            _downloadProgressState.update { state -> state.copy(isDownloading = true) }
+            getMutableDownloadState(id).update { state -> state.copy(isDownloading = true) }
             mediaDownloader.download(it, currentStreamable.value?.metadata?.name ?: "untitled")
-                .onEach { _downloadProgressState.update { state -> state.copy(progress = it) } }
-                .onCompletion { _downloadProgressState.update { state -> state.copy(isDownloading = false) } }
+                .onEach { getMutableDownloadState(id).update { state -> state.copy(progress = it) } }
+                .onCompletion {
+                    getMutableDownloadState(id).update { state ->
+                        state.copy(
+                            isDownloading = false,
+                            isCompleted = true
+                        )
+                    }
+                }
                 .launchIn(viewModelScope)
         } ?: throw Exception() //TODO()
+    }
+
+    fun getCurrentDownloadState(): StateFlow<DownloadState> {
+        val id = currentStreamable.value?.metadata?.id ?: throw Exception() //TODO()
+        return getMutableDownloadState(id).asStateFlow()
     }
 
     fun onSearchTextChange(newText: String) {
@@ -254,9 +272,12 @@ class SearchViewModel @Inject constructor(
     private fun getMimeOptionsVideo(selectedQuality: YoutubeVideoQuality): List<String> {
         return playerDelegate.streamingOptions?.video?.get(selectedQuality)?.map { it.mimeType } ?: emptyList()
     }
-}
 
-data class DownloadState(
-    val isDownloading: Boolean = false,
-    val progress: Float? = null
-)
+    private fun getMutableDownloadState(id: String): MutableStateFlow<DownloadState> {
+        return downloadingCache[id] ?: run {
+            val newFlow = MutableStateFlow(DownloadState())
+            downloadingCache[id] = newFlow
+            newFlow
+        }
+    }
+}

@@ -1,4 +1,4 @@
-package com.matttax.youtubedownloader.youtube.presentation
+package com.matttax.youtubedownloader.youtube.presentation.states
 
 data class UriSelectionState(
     val formatOptions: List<String>,

@@ -8,8 +8,8 @@ import com.matttax.youtubedownloader.core.config.Duration
 import com.matttax.youtubedownloader.core.config.SearchConfig
 import com.matttax.youtubedownloader.core.config.SortedBy
 import com.matttax.youtubedownloader.core.config.Uploaded
-import com.matttax.youtubedownloader.youtube.presentation.utils.FiltersConsts
-import com.matttax.youtubedownloader.youtube.presentation.utils.Options
+import com.matttax.youtubedownloader.youtube.presentation.ui.utils.FiltersConsts
+import com.matttax.youtubedownloader.youtube.presentation.ui.utils.Options
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map

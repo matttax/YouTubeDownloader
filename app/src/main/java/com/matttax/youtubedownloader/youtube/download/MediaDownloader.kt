@@ -52,7 +52,7 @@ class MediaDownloader @Inject constructor(
             cursor.close()
             emit(progress)
             if (downloading.get()) {
-                delay(1000)
+                delay(500)
             }
             if (progress == 1f) break
         }

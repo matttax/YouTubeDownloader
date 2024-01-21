@@ -1,7 +1,10 @@
 package com.matttax.youtubedownloader.youtube.presentation.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -10,11 +13,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
+import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MediaData(
     modifier: Modifier,
@@ -24,17 +33,21 @@ fun MediaData(
     val query by viewModel.searchText.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
     val isLoadingPage by viewModel.isLoadingPage.collectAsState()
-    var selectedVideo by rememberSaveable { mutableStateOf<Int?>(null) }
+    var selectedVideo by rememberSaveable { mutableStateOf<Int?>(null) } //TODO()
 
     val videoReady by viewModel.isVideoReady.collectAsState(initial = false)
 
     val currentStreamable by viewModel.currentStreamable.collectAsState()
 
+    val focusManager = LocalFocusManager.current
+
     Column(
         modifier = modifier
     ) {
         TextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(5.dp),
             value = query,
             onValueChange = viewModel::onSearchTextChange,
             placeholder = { Text("Search") },
@@ -42,20 +55,37 @@ fun MediaData(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(
                 onSearch = {
+                    focusManager.clearFocus()
                     selectedVideo = null
                     viewModel.onSearch(query)
                 }
-            )
+            ),
+            shape = RoundedCornerShape(20),
+            colors = TextFieldDefaults.colors(
+                focusedIndicatorColor = YouTubeRed,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.LightGray.copy(alpha = 0.2f),
+            ),
+            textStyle = TextStyle.Default.copy(fontSize = 16.sp)
         )
-        Spacer(modifier = Modifier.height(7.dp))
         Filters(
+            modifier = Modifier
+                .padding(horizontal = 10.dp),
+            spinnerModifier = Modifier
+                .weight(0.3f)
+                .border(
+                    width = (0.3).dp,
+                    color = Color.Black
+                ),
             searchConfig = viewModel.searchConfig,
             onDurationChange = viewModel::onSetDuration,
             onUploadDateChange = viewModel::onSetUploaded,
             onSortingChange = viewModel::onSetSorting,
-            onEvery = { selectedVideo = null }
+            onEvery = {
+                focusManager.clearFocus()
+                selectedVideo = null
+            }
         )
-        Spacer(modifier = Modifier.height(16.dp))
         if (isSearching) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -96,7 +126,7 @@ fun MediaData(
                                     onMimeTypeChanged = viewModel::onMimeTypeChanged
                                 )
                                 Spacer(
-                                    modifier = Modifier.height(5.dp)
+                                    modifier = Modifier.height(7.dp)
                                 )
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -122,6 +152,7 @@ fun MediaData(
                     } else {
                         MediaItem(videoList[it].toUiModel()) { id ->
                             run {
+                                focusManager.clearFocus()
                                 selectedVideo = it
                                 viewModel.onExtractData(id)
                             }
@@ -142,6 +173,9 @@ fun MediaData(
                 }
             }
         }
+    }
+    BackHandler {
+        focusManager.clearFocus()
     }
 }
 

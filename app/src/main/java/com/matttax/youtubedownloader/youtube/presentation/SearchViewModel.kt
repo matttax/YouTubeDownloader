@@ -9,6 +9,7 @@ import com.matttax.youtubedownloader.core.config.SortedBy
 import com.matttax.youtubedownloader.core.config.Uploaded
 import com.matttax.youtubedownloader.core.model.*
 import com.matttax.youtubedownloader.player.PlayerDelegate
+import com.matttax.youtubedownloader.settings.SettingsManager
 import com.matttax.youtubedownloader.youtube.download.MediaDownloader
 import com.matttax.youtubedownloader.youtube.mappers.getStreamingOptions
 import com.matttax.youtubedownloader.youtube.presentation.states.DownloadState
@@ -30,7 +31,8 @@ class SearchViewModel @Inject constructor(
     private val searchVideosUseCase: SearchVideosUseCase,
     private val extractDataUseCase: ExtractDataUseCase,
     private val mediaDownloader: MediaDownloader,
-    private val playerDelegate: PlayerDelegate
+    private val playerDelegate: PlayerDelegate,
+    private val settingsManager: SettingsManager //TODO()
 ) : ViewModel() {
 
     private var lastSearchedText: String? = null

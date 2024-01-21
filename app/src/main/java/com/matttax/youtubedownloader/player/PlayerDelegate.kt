@@ -3,7 +3,7 @@ package com.matttax.youtubedownloader.player
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.matttax.youtubedownloader.core.model.Format
-import com.matttax.youtubedownloader.youtube.download.model.MediaStreamingOptions
+import com.matttax.youtubedownloader.player.model.MediaStreamingOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject

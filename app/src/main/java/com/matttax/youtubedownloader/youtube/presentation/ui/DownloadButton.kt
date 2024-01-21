@@ -16,9 +16,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.matttax.youtubedownloader.core.ui.theme.LeafGreen
+import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
 import com.matttax.youtubedownloader.youtube.presentation.states.DownloadState
 import kotlinx.coroutines.flow.StateFlow
 
@@ -37,7 +39,7 @@ fun DownloadButton(
                 indication = rememberRipple(
                     bounded = true,
                     radius = if (!downloadState.isDownloading) 60.dp else 0.dp,
-                    color = Color.Unspecified
+                    color = Color.Blue.copy(alpha = 0.3f)
                 ),
                 interactionSource = remember { MutableInteractionSource() }
             )
@@ -54,7 +56,8 @@ fun DownloadButton(
             "Download"
         else "Downloading ${downloadState.progress?.times(100)?.toInt() ?: 0}%",
         color = Color.White,
-        textAlign = TextAlign.Center
+        textAlign = TextAlign.Center,
+        fontWeight = FontWeight.Bold
     )
 }
 
@@ -64,7 +67,7 @@ fun DownloadState.getGradients(): Array<Pair<Float, Color>> {
         (progress ?: 1f) to LeafGreen
     )
     return arrayOf(
-        (progress ?: 1f) to Color.Red,
+        (progress ?: 1f) to YouTubeRed,
         (progress ?: 1f) to Color.Blue.copy(alpha = 0.3f)
     )
 }

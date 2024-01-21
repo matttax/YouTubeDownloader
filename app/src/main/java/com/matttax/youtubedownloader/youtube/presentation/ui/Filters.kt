@@ -1,9 +1,12 @@
 package com.matttax.youtubedownloader.youtube.presentation.ui
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.matttax.youtubedownloader.core.config.Duration
 import com.matttax.youtubedownloader.core.config.SearchConfig
 import com.matttax.youtubedownloader.core.config.SortedBy
@@ -17,6 +20,8 @@ import kotlinx.coroutines.flow.onStart
 
 @Composable
 fun Filters(
+    modifier: Modifier,
+    spinnerModifier: Modifier,
     searchConfig: StateFlow<SearchConfig>,
     onDurationChange: (Duration) -> Unit,
     onUploadDateChange: (Uploaded) -> Unit,
@@ -24,10 +29,10 @@ fun Filters(
     onEvery: () -> Unit = {}
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Spinner(
-            modifier = Modifier.weight(0.3f),
+            modifier = spinnerModifier,
             name = FiltersConsts.DURATION.name,
             options = Options(
                 argumentMap = FiltersConsts.DURATION.argumentMap,
@@ -42,7 +47,7 @@ fun Filters(
                 .onStart { emit(searchConfig.value.duration.text) }
         )
         Spinner(
-            modifier = Modifier.weight(0.3f),
+            modifier = spinnerModifier,
             name = FiltersConsts.UPLOADED.name,
             options = Options(
                 argumentMap = FiltersConsts.UPLOADED.argumentMap,
@@ -57,7 +62,7 @@ fun Filters(
                 .onStart { emit(searchConfig.value.uploaded.text) }
         )
         Spinner(
-            modifier = Modifier.weight(0.3f),
+            modifier = spinnerModifier,
             name = FiltersConsts.SORTING.name,
             options = Options(
                 argumentMap = FiltersConsts.SORTING.argumentMap,

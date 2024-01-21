@@ -37,16 +37,20 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxHeight(0.95f),
                             viewModel = searchViewModel
                         )
-                        BackHandler(true) {}
+                        BackHandler(true) {
+                            // Hide player
+                        }
                     }
                     composable(route = BottomNavigationItems.LIBRARY.routeName) {
                         Text(
+                            modifier = Modifier.fillMaxHeight(0.95f),
                             text = "Library"
                         )
                         BackHandler(true) {}
                     }
                     composable(route = BottomNavigationItems.SETTINGS.routeName) {
                         Text(
+                            modifier = Modifier.fillMaxHeight(0.95f),
                             text = "Settings"
                         )
                         BackHandler(true) {}

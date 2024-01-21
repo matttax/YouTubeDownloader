@@ -25,7 +25,7 @@ fun Metadata(data: YoutubeVideoMetadata) {
     Text(text = data.name)
     Row {
         Image(
-            painter = painterResource(id = R.drawable.ic_baseline_remove_red_eye_24),
+            painter = painterResource(id = R.drawable.ic_views),
             contentDescription = null,
         )
         Spacer(modifier = Modifier.width(2.dp))
@@ -42,9 +42,9 @@ fun Metadata(data: YoutubeVideoMetadata) {
         Image(
             painter = painterResource(
                 id = if (!descriptionExpanded)
-                    R.drawable.ic_baseline_keyboard_arrow_right_24
+                    R.drawable.ic_info_hidden
                 else
-                    R.drawable.ic_baseline_keyboard_arrow_down_24
+                    R.drawable.ic_info_unfolded
             ),
             contentDescription = null,
         )

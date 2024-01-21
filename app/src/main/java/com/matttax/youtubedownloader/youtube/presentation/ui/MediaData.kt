@@ -16,7 +16,10 @@ import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
 
 @Composable
-fun MediaData(viewModel: SearchViewModel) {
+fun MediaData(
+    modifier: Modifier,
+    viewModel: SearchViewModel
+) {
     val videoList by viewModel.videoList.collectAsState()
     val query by viewModel.searchText.collectAsState()
     val isSearching by viewModel.isSearching.collectAsState()
@@ -27,7 +30,9 @@ fun MediaData(viewModel: SearchViewModel) {
 
     val currentStreamable by viewModel.currentStreamable.collectAsState()
 
-    Column {
+    Column(
+        modifier = modifier
+    ) {
         TextField(
             modifier = Modifier.fillMaxWidth(),
             value = query,

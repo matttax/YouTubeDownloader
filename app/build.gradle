@@ -67,6 +67,8 @@ dependencies {
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3:1.1.2'
 
+    implementation "androidx.navigation:navigation-compose:2.7.6"
+
     implementation 'androidx.core:core-splashscreen:1.0.1'
     implementation 'com.github.sealedtx:java-youtube-downloader:3.2.3'
     implementation 'com.github.bumptech.glide:compose:1.0.0-beta01'

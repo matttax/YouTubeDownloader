@@ -2,88 +2,58 @@ package com.matttax.youtubedownloader
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.Text
+import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.matttax.youtubedownloader.navigation.BottomNavigationItems
+import com.matttax.youtubedownloader.navigation.ui.BottomNavigationBar
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
-import com.matttax.youtubedownloader.core.ui.utils.BottomNavigationItem
 import com.matttax.youtubedownloader.youtube.presentation.ui.MediaData
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val bottomItems = listOf(
-        BottomNavigationItem(
-            title = "Search",
-            selectedIcon = Icons.Filled.Search,
-            unselectedIcon = Icons.Outlined.Search,
-        ),
-        BottomNavigationItem(
-            title = "Saved",
-            selectedIcon = Icons.Filled.Favorite,
-            unselectedIcon = Icons.Outlined.Favorite,
-        ),
-        BottomNavigationItem(
-            title = "Settings",
-            selectedIcon = Icons.Filled.Settings,
-            unselectedIcon = Icons.Outlined.Settings,
-        ),
-    )
-
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installSplashScreen()
-        val viewModel: SearchViewModel by viewModels()
         setContent {
-            MediaData(viewModel)
-//            var selectedBottomItemIndex by rememberSaveable { mutableStateOf(0) }
-//            Scaffold(
-//                bottomBar = {
-//                    NavigationBar {
-//                        bottomItems.forEachIndexed { index, item ->
-//                            NavigationBarItem(
-//                                selected = selectedBottomItemIndex == index,
-//                                onClick = {
-//                                    selectedBottomItemIndex = index
-//                                    // navController.navigate(item.title)
-//                                },
-//                                label = {
-//                                    Text(text = item.title)
-//                                },
-//                                alwaysShowLabel = false,
-//                                icon = {
-//                                    BadgedBox(
-//                                        badge = {
-//                                            if (item.badgeCount != null) {
-//                                                Badge {
-//                                                    Text(text = item.badgeCount.toString())
-//                                                }
-//                                            } else if (item.hasNews) {
-//                                                Badge()
-//                                            }
-//                                        }
-//                                    ) {
-//                                        Icon(
-//                                            imageVector = if (index == selectedBottomItemIndex) {
-//                                                item.selectedIcon
-//                                            } else item.unselectedIcon,
-//                                            contentDescription = item.title
-//                                        )
-//                                    }
-//                                }
-//                            )
-//                        }
-//                    }
-//                },
-//            ) {
-//                MediaData(viewModel)
-//            }
+            val navController = rememberNavController()
+            val searchViewModel: SearchViewModel by viewModels()
+            Column {
+                NavHost(
+                    navController = navController,
+                    startDestination = BottomNavigationItems.YOUTUBE.routeName,
+                ) {
+                    composable(route = BottomNavigationItems.YOUTUBE.routeName) {
+                        MediaData(
+                            modifier = Modifier.fillMaxHeight(0.95f),
+                            viewModel = searchViewModel
+                        )
+                        BackHandler(true) {}
+                    }
+                    composable(route = BottomNavigationItems.LIBRARY.routeName) {
+                        Text(
+                            text = "Library"
+                        )
+                        BackHandler(true) {}
+                    }
+                    composable(route = BottomNavigationItems.SETTINGS.routeName) {
+                        Text(
+                            text = "Settings"
+                        )
+                        BackHandler(true) {}
+                    }
+                }
+                BottomNavigationBar(navController)
+            }
         }
     }
 }

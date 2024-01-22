@@ -1,5 +1,6 @@
-package com.matttax.youtubedownloader.youtube.presentation.ui
+package com.matttax.youtubedownloader.core.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,11 +11,13 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
@@ -30,18 +33,39 @@ fun MediaItem(videoData: UiMediaModel, onClick: (String) -> Unit) {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            GlideImage(
+            Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(40.dp)
                     .border(
-                        width = 3.dp,
-                        color = Color.Black.copy(),
-                        shape = RoundedCornerShape(5.dp)
-                    )
-                    .weight(1f),
-                model = videoData.thumbnailUri,
-                contentDescription = null,
-            )
+                        width = 2.dp,
+                        color = Color.Black,
+                        shape = RoundedCornerShape(2.dp)
+                    ).weight(0.3f),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                GlideImage(
+                    modifier = Modifier.fillMaxSize(),
+                    model = videoData.thumbnailUri,
+                    contentDescription = null,
+                    contentScale = ContentScale.FillHeight
+                )
+                Text(
+                    modifier = Modifier
+                        .background(
+                            color = Color.Black,
+                            shape = RoundedCornerShape(50.dp)
+                        )
+                        .padding(
+                            start = 3.dp,
+                            end = 3.dp,
+                            top = 1.dp,
+                            bottom = 3.dp
+                        ),
+                    text = videoData.duration.secondsToDuration(),
+                    fontSize = 10.sp,
+                    color = Color.White
+                )
+            }
             Spacer(
                 modifier = Modifier.weight(0.05f)
             )
@@ -69,5 +93,16 @@ data class UiMediaModel(
     val id: String,
     val thumbnailUri: String,
     val name: String,
-    val author: String
+    val author: String,
+    val duration: Int
 )
+
+fun Int.secondsToDuration(): String {
+    val hours = div(3600)
+    val minutes = mod(3600).div(60)
+    val seconds = mod(60)
+    return if (hours > 0)
+        String.format("%02d:%02d:%02d", hours, minutes, seconds)
+    else
+        String.format("%02d:%02d", minutes, seconds)
+}

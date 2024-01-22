@@ -23,6 +23,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
+import com.matttax.youtubedownloader.library.LibraryScreen
+import com.matttax.youtubedownloader.library.LibraryViewModel
 import com.matttax.youtubedownloader.navigation.BottomNavigationItems
 import com.matttax.youtubedownloader.navigation.ui.BottomNavigationBar
 import com.matttax.youtubedownloader.settings.presentation.SettingsViewModel
@@ -42,6 +44,7 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val searchViewModel: SearchViewModel by viewModels()
             val settingsViewModel: SettingsViewModel by viewModels()
+            val libraryViewModel: LibraryViewModel by viewModels()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             Column {
                 AnimatedContent(
@@ -85,11 +88,10 @@ class MainActivity : ComponentActivity() {
                     }
                     composable(route = BottomNavigationItems.LIBRARY.routeName) {
                         searchViewModel.onQuit()
-                        Text(
+                        LibraryScreen(
                             modifier = Modifier.fillMaxHeight(0.95f),
-                            text = "Library"
+                            viewModel = libraryViewModel
                         )
-                        BackHandler(true) {}
                     }
                     composable(route = BottomNavigationItems.SETTINGS.routeName) {
                         searchViewModel.onQuit()
@@ -97,7 +99,9 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxHeight(0.95f),
                             viewModel = settingsViewModel
                         )
-                        BackHandler(true) {}
+                        BackHandler(true) {
+                            onBackPressed()
+                        }
                     }
                 }
                 BottomNavigationBar(navController)

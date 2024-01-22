@@ -8,11 +8,13 @@ import com.matttax.youtubedownloader.core.config.SearchConfig
 import com.matttax.youtubedownloader.core.config.SortedBy
 import com.matttax.youtubedownloader.core.config.Uploaded
 import com.matttax.youtubedownloader.core.model.*
+import com.matttax.youtubedownloader.library.MediaItem
+import com.matttax.youtubedownloader.library.repositories.MediaRepository
 import com.matttax.youtubedownloader.player.PlayerDelegate
 import com.matttax.youtubedownloader.settings.SettingsManager
 import com.matttax.youtubedownloader.settings.model.PlayerSettings
 import com.matttax.youtubedownloader.settings.model.SearchSettings
-import com.matttax.youtubedownloader.youtube.download.MediaDownloader
+import com.matttax.youtubedownloader.youtube.MediaDownloader
 import com.matttax.youtubedownloader.youtube.mappers.getStreamingOptions
 import com.matttax.youtubedownloader.youtube.presentation.states.DownloadState
 import com.matttax.youtubedownloader.youtube.presentation.states.UriSelectionState
@@ -34,7 +36,8 @@ class SearchViewModel @Inject constructor(
     private val extractDataUseCase: ExtractDataUseCase,
     private val mediaDownloader: MediaDownloader,
     private val playerDelegate: PlayerDelegate,
-    private val settingsManager: SettingsManager //TODO()
+    private val settingsManager: SettingsManager,
+    private val mediaRepository: MediaRepository
 ) : ViewModel() {
 
     private var lastSearchedText: String? = null
@@ -127,18 +130,19 @@ class SearchViewModel @Inject constructor(
     }
 
     fun onDownload() {
-        val id = _currentStreamable.value?.metadata?.id ?: return
-        playerDelegate.playing?.let {
-            getMutableDownloadState(id).update { state -> state.copy(isDownloading = true) }
-            mediaDownloader.download(it, currentStreamable.value?.metadata?.name ?: "untitled")
-                .onEach { getMutableDownloadState(id).update { state -> state.copy(progress = it) } }
+        val currentMetadata = _currentStreamable.value?.metadata ?: return
+        playerDelegate.playing?.let { format ->
+            getMutableDownloadState(currentMetadata.id).update { state -> state.copy(isDownloading = true) }
+            mediaDownloader.download(format, currentStreamable.value?.metadata?.name ?: "untitled")
+                .onEach { getMutableDownloadState(currentMetadata.id).update { state -> state.copy(progress = it) } }
                 .onCompletion {
-                    getMutableDownloadState(id).update { state ->
+                    getMutableDownloadState(currentMetadata.id).update { state ->
                         state.copy(
                             isDownloading = false,
                             isCompleted = true
                         )
                     }
+                    addToRepo(currentMetadata, format)
                 }
                 .launchIn(viewModelScope)
         } ?: throw Exception() //TODO()
@@ -303,6 +307,25 @@ class SearchViewModel @Inject constructor(
             val newFlow = MutableStateFlow(DownloadState())
             downloadingCache[id] = newFlow
             newFlow
+        }
+    }
+
+    private fun addToRepo(
+        metadata: YoutubeVideoMetadata,
+        format: Format
+    ) = viewModelScope.launch(Dispatchers.IO) {
+        with(metadata) {
+            mediaRepository.addMediaItem(
+                MediaItem(
+                    title = name,
+                    author = author,
+                    description = description,
+                    thumbnailUri = thumbnailUri,
+                    hasVideo = format is Format.Video,
+                    durationSeconds = durationSeconds,
+                    path = mediaDownloader.getPath(format.url)
+                )
+            )
         }
     }
 

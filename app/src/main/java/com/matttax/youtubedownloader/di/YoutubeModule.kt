@@ -5,7 +5,7 @@ import com.matttax.youtubedownloader.core.DataExtractor
 import com.matttax.youtubedownloader.core.VideoSearcher
 import com.matttax.youtubedownloader.youtube.usecases.ExtractDataUseCase
 import com.matttax.youtubedownloader.youtube.usecases.SearchVideosUseCase
-import com.matttax.youtubedownloader.youtube.extraction.DataExtractorImpl
+import com.matttax.youtubedownloader.youtube.DataExtractorImpl
 import com.matttax.youtubedownloader.youtube.search.VideoSearcherImpl
 import dagger.Module
 import dagger.Provides

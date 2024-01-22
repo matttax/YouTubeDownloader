@@ -8,7 +8,8 @@ data class YoutubeVideoMetadata(
     val viewCount: Long,
     val isLive: Boolean,
     val thumbnailUri: String,
-    val isMovie: Boolean? = null,
+    val durationSeconds: Int,
+    val isMovie: Boolean? = null
 ) {
     override fun equals(other: Any?): Boolean {
         return id == (other as? YoutubeVideoMetadata)?.id

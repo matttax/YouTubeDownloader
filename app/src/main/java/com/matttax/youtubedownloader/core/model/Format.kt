@@ -6,18 +6,18 @@ sealed class Format(
     open val url: String
 ) {
     data class Video(
-        override val mimeType: String,
-        override val duration: Long,
+        override val mimeType: String = "unknown",
+        override val duration: Long = -1,
         override val url: String,
-        val quality: YoutubeVideoQuality,
-        val fps: Int,
+        val quality: YoutubeVideoQuality = YoutubeVideoQuality.UNKNOWN,
+        val fps: Int = -1,
     ) : Format(mimeType, duration, url)
 
     data class Audio(
-        override val mimeType: String,
-        override val duration: Long,
+        override val mimeType: String = "unknown",
+        override val duration: Long = -1,
         override val url: String,
-        val quality: YoutubeAudioQuality,
+        val quality: YoutubeAudioQuality = YoutubeAudioQuality.UNKNOWN,
     ) : Format(mimeType, duration, url)
 }
 

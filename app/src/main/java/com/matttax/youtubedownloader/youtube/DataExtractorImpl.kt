@@ -1,4 +1,4 @@
-package com.matttax.youtubedownloader.youtube.extraction
+package com.matttax.youtubedownloader.youtube
 
 import com.github.kiulian.downloader.YoutubeDownloader
 import com.github.kiulian.downloader.downloader.request.RequestVideoInfo

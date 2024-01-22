@@ -19,6 +19,9 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
+import com.matttax.youtubedownloader.core.ui.MediaItem
+import com.matttax.youtubedownloader.core.ui.Player
+import com.matttax.youtubedownloader.core.ui.UiMediaModel
 import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
 
@@ -182,6 +185,6 @@ fun MediaData(
 
 fun YoutubeVideoMetadata.toUiModel(): UiMediaModel {
     return UiMediaModel(
-        id, thumbnailUri, name, author
+        id, thumbnailUri, name, author, durationSeconds
     )
 }

@@ -1,5 +1,6 @@
 package com.matttax.youtubedownloader.player
 
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import com.matttax.youtubedownloader.core.model.Format
@@ -42,6 +43,15 @@ class PlayerDelegate @Inject constructor(
             play()
         }
         _playing = format
+    }
+
+    fun play(playlist: List<String>, startPosition: Int = 0) {
+        playlist.forEach {
+            exoPlayer.addMediaItem(MediaItem.fromUri(it))
+        }
+        exoPlayer.seekTo(startPosition, C.TIME_UNSET)
+        exoPlayer.play()
+        _playing = Format.Video(url = playlist[startPosition])
     }
 
     fun setStreamingOptions(streamingOptions: MediaStreamingOptions) {

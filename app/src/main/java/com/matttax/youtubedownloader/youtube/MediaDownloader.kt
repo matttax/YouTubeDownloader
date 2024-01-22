@@ -1,4 +1,4 @@
-package com.matttax.youtubedownloader.youtube.download
+package com.matttax.youtubedownloader.youtube
 
 import android.app.DownloadManager
 import android.content.Context
@@ -9,9 +9,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.collections.HashMap
 
 @Singleton
 class MediaDownloader @Inject constructor(
@@ -20,14 +22,13 @@ class MediaDownloader @Inject constructor(
 
     private val downloadManager: DownloadManager =
         context.getSystemService(DownloadManager::class.java)
+    private val downloadedPaths = Collections.synchronizedMap(HashMap<String, String>())
 
     fun download(format: Format, title: String): Flow<Float> {
-        val directory = when(format) {
-            is Format.Video -> Environment.DIRECTORY_MOVIES
-            is Format.Audio -> Environment.DIRECTORY_MUSIC
-        }
+        val directory = Environment.DIRECTORY_DOWNLOADS
         val ext = extractFormatFromMimeType(format.mimeType) ?: ""
-        val subPath = "$title$ext"
+        val subPath =
+            "${Regex("[^A-Za-z0-9 ]").replace(format.url.takeLast(25), "")}$ext"
         val request = DownloadManager.Request(format.url.toUri())
             .setTitle(title)
             .setMimeType(format.mimeType)
@@ -35,7 +36,12 @@ class MediaDownloader @Inject constructor(
                 DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED or DownloadManager.Request.VISIBILITY_VISIBLE
             ).setDestinationInExternalPublicDir(directory, subPath)
         val downloadId = downloadManager.enqueue(request)
+        downloadedPaths[format.url] = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/$subPath"
         return progressFlow(downloadId)
+    }
+
+    fun getPath(uri: String): String {
+        return downloadedPaths[uri] ?: throw Exception() //TODO()
     }
 
     private fun progressFlow(id: Long) = flow {

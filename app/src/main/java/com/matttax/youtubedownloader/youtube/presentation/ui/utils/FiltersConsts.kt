@@ -10,7 +10,7 @@ object FiltersConsts {
         argumentMap = enumValues<SortedBy>().associateBy { it.text },
     )
     val DURATION = Filter(
-        name = "Sort by",
+        name = "Duration",
         argumentMap = enumValues<Duration>().associateBy { it.text }
     )
     val UPLOADED = Filter(

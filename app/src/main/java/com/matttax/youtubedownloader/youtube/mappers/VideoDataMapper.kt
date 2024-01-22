@@ -17,6 +17,7 @@ object VideoDataMapper {
         author = author() ?: "Unknown",
         viewCount = viewCount(),
         isLive = isLive,
+        isMovie = isMovie,
         thumbnailUri = thumbnails().first() ?: ""
     )
 

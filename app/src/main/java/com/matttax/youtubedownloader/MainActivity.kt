@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,31 +34,48 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    @OptIn(ExperimentalAnimationApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installSplashScreen()
         setContent {
             val navController = rememberNavController()
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
             val searchViewModel: SearchViewModel by viewModels()
             val settingsViewModel: SettingsViewModel by viewModels()
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
             Column {
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .background(
-                            color = YouTubeRed,
-                            shape = RoundedCornerShape(30.dp)
+                AnimatedContent(
+                    targetState = navBackStackEntry,
+                    transitionSpec = {
+                        EnterTransition.None togetherWith ExitTransition.None
+                    }
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            modifier = Modifier
+                                .background(
+                                    color = YouTubeRed,
+                                    shape = RoundedCornerShape(30.dp)
+                                )
+                                .padding(horizontal = 12.dp, vertical = 3.dp)
+                                .animateEnterExit(
+                                    enter = scaleIn(),
+                                    exit = scaleOut()
+                                ),
+                            text = navBackStackEntry?.destination?.route.routeToScreenName(),
+                            color = Color.White,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold
                         )
-                        .padding(horizontal = 10.dp, vertical = 3.dp),
-                    text = navBackStackEntry?.destination?.route.routeToScreenName(),
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold
-                )
+                    }
+                }
                 NavHost(
                     navController = navController,
-                    startDestination = BottomNavigationItems.YOUTUBE.routeName,
+                    startDestination = BottomNavigationItems.YOUTUBE.routeName
                 ) {
                     composable(route = BottomNavigationItems.YOUTUBE.routeName) {
                         MediaData(
@@ -66,6 +84,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable(route = BottomNavigationItems.LIBRARY.routeName) {
+                        searchViewModel.onQuit()
                         Text(
                             modifier = Modifier.fillMaxHeight(0.95f),
                             text = "Library"
@@ -73,6 +92,7 @@ class MainActivity : ComponentActivity() {
                         BackHandler(true) {}
                     }
                     composable(route = BottomNavigationItems.SETTINGS.routeName) {
+                        searchViewModel.onQuit()
                         SettingsScreen(
                             modifier = Modifier.fillMaxHeight(0.95f),
                             viewModel = settingsViewModel
@@ -89,8 +109,7 @@ class MainActivity : ComponentActivity() {
 fun String?.routeToScreenName(): String {
     return when(this) {
         BottomNavigationItems.LIBRARY.routeName -> "Library"
-        BottomNavigationItems.YOUTUBE.routeName -> "YouTube"
         BottomNavigationItems.SETTINGS.routeName -> "Settings"
-        else -> ""
+        else -> "YouTube"
     }
 }

@@ -10,6 +10,8 @@ import com.matttax.youtubedownloader.core.config.Uploaded
 import com.matttax.youtubedownloader.core.model.*
 import com.matttax.youtubedownloader.player.PlayerDelegate
 import com.matttax.youtubedownloader.settings.SettingsManager
+import com.matttax.youtubedownloader.settings.model.PlayerSettings
+import com.matttax.youtubedownloader.settings.model.SearchSettings
 import com.matttax.youtubedownloader.youtube.download.MediaDownloader
 import com.matttax.youtubedownloader.youtube.mappers.getStreamingOptions
 import com.matttax.youtubedownloader.youtube.presentation.states.DownloadState
@@ -36,6 +38,8 @@ class SearchViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var lastSearchedText: String? = null
+    private var searchSettings: SearchSettings = settingsManager.getSearchSettings()
+    private lateinit var playerSettings: PlayerSettings
     private val downloadingCache =
         Collections.synchronizedMap(HashMap<String, MutableStateFlow<DownloadState>>())
 
@@ -44,7 +48,9 @@ class SearchViewModel @Inject constructor(
     private val _searchText = MutableStateFlow("")
     private val _isSearching = MutableStateFlow(false)
     private val _isLoadingPage = MutableStateFlow(false)
-    private val _searchConfig = MutableStateFlow(SearchConfig())
+    private val _searchConfig = MutableStateFlow(
+        SearchConfig(allowCorrection = searchSettings.isAutocorrectionOn)
+    )
     private val _uriSelectionState = MutableStateFlow<UriSelectionState?>(null)
 
     val videoList = _videoList.asStateFlow()
@@ -73,25 +79,31 @@ class SearchViewModel @Inject constructor(
     }
 
     fun onSearch(text: String) {
+        searchSettings = settingsManager.getSearchSettings()
         playerDelegate.clear()
         lastSearchedText = text
         _currentStreamable.value = null
         viewModelScope.launch {
             _isSearching.value = true
             _videoList.value = withContext(Dispatchers.IO) {
-                searchVideosUseCase.executeSearch(text, _searchConfig.value)
+                searchVideosUseCase
+                    .executeSearch(text, _searchConfig.value)
+                    .filterBySettings()
             }
             _isSearching.value = false
         }
     }
 
-    fun onNextPage() = viewModelScope.launch {
-        _isLoadingPage.value = true
-        if (_searchText.value != lastSearchedText) return@launch
-        _videoList.value = withContext(Dispatchers.IO) {
-            _videoList.value + searchVideosUseCase.searchFurther()
+    fun onNextPage() {
+        searchSettings = settingsManager.getSearchSettings()
+        viewModelScope.launch {
+            _isLoadingPage.value = true
+            if (_searchText.value != lastSearchedText) return@launch
+            _videoList.value = withContext(Dispatchers.IO) {
+                _videoList.value + searchVideosUseCase.searchFurther().filterBySettings()
+            }
+            _isLoadingPage.value = false
         }
-        _isLoadingPage.value = false
     }
 
     fun onExtractData(id: String) = viewModelScope.launch {
@@ -174,6 +186,14 @@ class SearchViewModel @Inject constructor(
         _uriSelectionState.value = getInitialSelectionState(newMediaFormat)
     }
 
+    fun <Q> onQualityChanged(newQuality: Q) {
+        when(newQuality) {
+            is YoutubeAudioQuality -> onAudioQualityChanged(newQuality)
+            is YoutubeVideoQuality -> onVideoQualityChanged(newQuality)
+            else -> throw Exception() //TODO()
+        }
+    }
+
     fun onMimeTypeChanged(mimeType: String) {
         val streamableStable = _currentStreamable.value ?: return
         val currentPlaying = playerDelegate.playing ?: return
@@ -191,12 +211,15 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    fun <Q> onQualityChanged(newQuality: Q) {
-        when(newQuality) {
-            is YoutubeAudioQuality -> onAudioQualityChanged(newQuality)
-            is YoutubeVideoQuality -> onVideoQualityChanged(newQuality)
-            else -> throw Exception() //TODO()
+    fun onPlayerHidden() {
+        playerSettings = settingsManager.getPlayerSettings()
+        if (playerSettings.stopWhenHidden) {
+            playerDelegate.pause()
         }
+    }
+
+    fun onQuit() {
+        playerDelegate.pause()
     }
 
     private fun onVideoQualityChanged(newQuality: YoutubeVideoQuality) {
@@ -280,6 +303,18 @@ class SearchViewModel @Inject constructor(
             val newFlow = MutableStateFlow(DownloadState())
             downloadingCache[id] = newFlow
             newFlow
+        }
+    }
+
+    private fun List<YoutubeVideoMetadata>.filterBySettings(): List<YoutubeVideoMetadata> {
+        return filter {
+            if (!searchSettings.showLives) {
+                !it.isLive
+            } else true
+        }.filter {
+            if (!searchSettings.showMovies) {
+                it.isMovie == false
+            } else true
         }
     }
 }

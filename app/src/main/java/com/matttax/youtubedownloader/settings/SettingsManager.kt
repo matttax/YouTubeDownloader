@@ -16,18 +16,18 @@ class SettingsManager @Inject constructor(
 
     fun getSearchSettings(): SearchSettings {
         val autocorrection = sharedPrefs.getBoolean(SEARCH_SETTINGS_AUTOCORRECTION, false)
-        val shorts = sharedPrefs.getBoolean(SEARCH_SETTINGS_SHORTS, true)
+        val movies = sharedPrefs.getBoolean(SEARCH_SETTINGS_MOVIES, true)
         val lives = sharedPrefs.getBoolean(SEARCH_SETTINGS_LIVES, true)
-        return SearchSettings(autocorrection, shorts, lives)
+        return SearchSettings(autocorrection, movies, lives)
     }
 
     fun getPlayerSettings(): PlayerSettings {
-        val pauseWhenQuit = sharedPrefs.getBoolean(PLAYER_SETTINGS_QUIT_PAUSE, true)
+        val pauseWhenQuit = sharedPrefs.getBoolean(PLAYER_SETTINGS_PAUSE_HIDDEN, true)
         return PlayerSettings(pauseWhenQuit)
     }
 
-    fun setPlaybackStopWhenQuit(state: Boolean) {
-        sharedPrefs.edit().putBoolean(PLAYER_SETTINGS_QUIT_PAUSE, state).apply()
+    fun setPlaybackStopWhenHidden(state: Boolean) {
+        sharedPrefs.edit().putBoolean(PLAYER_SETTINGS_PAUSE_HIDDEN, state).apply()
     }
 
     fun setSearchAutocorrection(state: Boolean) {
@@ -38,15 +38,15 @@ class SettingsManager @Inject constructor(
         sharedPrefs.edit().putBoolean(SEARCH_SETTINGS_LIVES, state).apply()
     }
 
-    fun setShowShorts(state: Boolean) {
-        sharedPrefs.edit().putBoolean(SEARCH_SETTINGS_SHORTS, state).apply()
+    fun setShowMovies(state: Boolean) {
+        sharedPrefs.edit().putBoolean(SEARCH_SETTINGS_MOVIES, state).apply()
     }
 
     companion object {
         const val APP_PREFERENCES = "settings"
         const val SEARCH_SETTINGS_AUTOCORRECTION = "autocorrection_on"
-        const val SEARCH_SETTINGS_SHORTS = "show_shorts"
+        const val SEARCH_SETTINGS_MOVIES = "show_movies"
         const val SEARCH_SETTINGS_LIVES = "show_lives"
-        const val PLAYER_SETTINGS_QUIT_PAUSE = "quit_pause"
+        const val PLAYER_SETTINGS_PAUSE_HIDDEN = "pause_hidden"
     }
 }

@@ -1,12 +1,9 @@
 package com.matttax.youtubedownloader.youtube.presentation.ui
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.matttax.youtubedownloader.core.config.Duration
 import com.matttax.youtubedownloader.core.config.SearchConfig
 import com.matttax.youtubedownloader.core.config.SortedBy

@@ -2,6 +2,6 @@ package com.matttax.youtubedownloader.settings.model
 
 enum class SearchOptions {
     SHOW_LIVES,
-    SHOW_SHORTS,
+    SHOW_MOVIES,
     AUTOCORRECT
 }

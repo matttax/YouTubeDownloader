@@ -29,9 +29,9 @@ fun SettingsScreen(
         ) {
             CheckboxOption(
                 text = "Stop playback when quit",
-                checkedState = viewModel.playerSettings.map { it.stopWhenQuit }
+                checkedState = viewModel.playerSettings.map { it.stopWhenHidden }
             ) {
-                viewModel.onSetPlayWhenQuit(it)
+                viewModel.onSetPlayWhenHidden(it)
             }
         }
         SettingsBlock(
@@ -44,10 +44,10 @@ fun SettingsScreen(
                 viewModel.onChangeSearchOption(SearchOptions.AUTOCORRECT, it)
             }
             CheckboxOption(
-                text = "Show shorts",
-                checkedState = viewModel.searchSettings.map { it.showShorts }
+                text = "Show movies",
+                checkedState = viewModel.searchSettings.map { it.showMovies }
             ) {
-                viewModel.onChangeSearchOption(SearchOptions.SHOW_SHORTS, it)
+                viewModel.onChangeSearchOption(SearchOptions.SHOW_MOVIES, it)
             }
             CheckboxOption(
                 text = "Show lives",

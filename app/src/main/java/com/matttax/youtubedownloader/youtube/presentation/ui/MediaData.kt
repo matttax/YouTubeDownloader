@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,7 +74,8 @@ fun MediaData(
                 .weight(0.3f)
                 .border(
                     width = (0.3).dp,
-                    color = Color.Black
+                    color = Color.Black,
+                    shape = RoundedCornerShape(7.dp)
                 ),
             searchConfig = viewModel.searchConfig,
             onDurationChange = viewModel::onSetDuration,
@@ -117,7 +117,8 @@ fun MediaData(
                                     Metadata(data = data)
                                 }
                                 Player(
-                                    exoPlayer = viewModel.getExoInstance()
+                                    exoPlayer = viewModel.getExoInstance(),
+                                    onPause = viewModel::onPlayerHidden
                                 )
                                 StreamingOptions(
                                     uriSelectionState = viewModel.uriSelectionState,

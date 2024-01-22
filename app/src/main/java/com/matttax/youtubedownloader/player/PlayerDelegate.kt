@@ -51,4 +51,6 @@ class PlayerDelegate @Inject constructor(
     fun release() = exoPlayer.release()
 
     fun clear() = exoPlayer.clearMediaItems()
+
+    fun pause() = exoPlayer.pause()
 }

@@ -20,9 +20,9 @@ class SettingsViewModel @Inject constructor(
     val playerSettings = _playerSettings.asStateFlow()
     val searchSettings = _searchSettings.asStateFlow()
 
-    fun onSetPlayWhenQuit(state: Boolean) {
-        settingsManager.setPlaybackStopWhenQuit(state)
-        _playerSettings.update { it.copy(stopWhenQuit = state) }
+    fun onSetPlayWhenHidden(state: Boolean) {
+        settingsManager.setPlaybackStopWhenHidden(state)
+        _playerSettings.update { it.copy(stopWhenHidden = state) }
     }
 
     fun onChangeSearchOption(option: SearchOptions, state: Boolean) {
@@ -31,9 +31,9 @@ class SettingsViewModel @Inject constructor(
                 settingsManager.setShowLives(state)
                 _searchSettings.update { it.copy(showLives = state) }
             }
-            SearchOptions.SHOW_SHORTS -> {
-                settingsManager.setShowShorts(state)
-                _searchSettings.update { it.copy(showShorts = state) }
+            SearchOptions.SHOW_MOVIES -> {
+                settingsManager.setShowMovies(state)
+                _searchSettings.update { it.copy(showMovies = state) }
             }
             SearchOptions.AUTOCORRECT -> {
                 settingsManager.setSearchAutocorrection(state)

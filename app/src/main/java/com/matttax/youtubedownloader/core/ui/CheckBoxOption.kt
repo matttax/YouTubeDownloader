@@ -1,4 +1,4 @@
-package com.matttax.youtubedownloader.settings.presentation.ui
+package com.matttax.youtubedownloader.core.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

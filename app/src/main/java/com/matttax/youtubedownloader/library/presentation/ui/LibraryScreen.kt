@@ -1,10 +1,12 @@
 package com.matttax.youtubedownloader.library.presentation.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
@@ -17,27 +19,59 @@ fun LibraryScreen(
     viewModel: LibraryViewModel
 ) {
     val isPlaying by viewModel.isPlaying.collectAsState()
+
     Column(
         modifier = modifier
     ) {
-        if (!isPlaying) {
+        AnimatedVisibility(
+            visible = !isPlaying,
+            enter = slideInHorizontally(
+                initialOffsetX = { -it },
+                animationSpec = tween(
+                    durationMillis = 600,
+                    easing = LinearOutSlowInEasing
+                )
+            ),
+            exit = slideOutHorizontally(
+                targetOffsetX = { -it },
+                animationSpec = tween(
+                    durationMillis = 600,
+                    easing = FastOutSlowInEasing
+                )
+            )
+        ) {
             Playlists(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.16f)
                     .padding(vertical = 7.dp)
                     .shadow(1.dp),
-                onNewClick = {
-
-                }
+                playlistsState = viewModel.playlists,
+                onNewCreate = viewModel::onAddPlaylist,
+                onSelected = viewModel::onChoosePlaylist
             )
         }
         MediaList(
             modifier = Modifier.weight(0.7f),
-            mediaListFlow = viewModel.mediaList,
-            onSelect = viewModel::onSetItem
+            viewModel = viewModel
         )
-        if (isPlaying) {
+        AnimatedVisibility(
+            visible = isPlaying,
+            enter = slideInHorizontally(
+                initialOffsetX = { -it },
+                animationSpec = tween(
+                    durationMillis = 600,
+                    easing = LinearOutSlowInEasing
+                )
+            ),
+            exit = slideOutHorizontally(
+                targetOffsetX = { -it },
+                animationSpec = tween(
+                    durationMillis = 600,
+                    easing = FastOutSlowInEasing
+                )
+            )
+        ) {
             Player(
                 modifier = Modifier
                     .weight(0.3f)
@@ -49,6 +83,8 @@ fun LibraryScreen(
     }
 
     BackHandler(enabled = true) {
-        viewModel.onStopPlayback()
+        if (isPlaying) {
+            viewModel.onStopPlayback()
+        } else viewModel.loadAllMedia()
     }
 }

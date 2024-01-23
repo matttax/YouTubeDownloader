@@ -3,6 +3,7 @@ package com.matttax.youtubedownloader.settings.presentation.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.matttax.youtubedownloader.core.ui.CheckboxOption
 import com.matttax.youtubedownloader.settings.model.SearchOptions
 import com.matttax.youtubedownloader.settings.presentation.SettingsViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

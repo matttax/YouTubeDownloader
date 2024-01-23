@@ -1,6 +1,5 @@
 package com.matttax.youtubedownloader.library.repositories.model
 
-
 data class MediaItem(
     val title: String,
     val author: String,
@@ -8,5 +7,6 @@ data class MediaItem(
     val thumbnailUri: String,
     val hasVideo: Boolean,
     val durationSeconds: Int,
-    val path: String
+    val path: String,
+    val id: Long? = null
 )

@@ -20,4 +20,7 @@ interface MediaToPlaylistDao {
         "SELECT * FROM media_to_playlist WHERE playlist_id IN (SELECT name FROM playlist WHERE name=:name)"
     )
     fun getByPlaylistName(name: String): Flow<List<MediaToPlaylistEntity>>
+
+    @Query("SELECT playlist_id FROM media_to_playlist WHERE media_id=:mediaId")
+    fun getMediaPlaylistsIds(mediaId: Long): Flow<List<Int>>
 }

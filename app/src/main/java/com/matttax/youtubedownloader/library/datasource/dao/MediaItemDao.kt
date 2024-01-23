@@ -24,4 +24,10 @@ interface MediaItemDao {
 
     @Query("SELECT * FROM media_item WHERE author=:authorName")
     fun getByAuthor(authorName: String): Flow<List<MediaItemEntity>>
+
+    @Query("SELECT * FROM media_item WHERE id IN (:ids)")
+    fun getByIds(ids: List<Long>): Flow<List<MediaItemEntity>>
+
+    @Query("DELETE FROM media_item WHERE path=:path")
+    fun deleteByPath(path: String)
 }

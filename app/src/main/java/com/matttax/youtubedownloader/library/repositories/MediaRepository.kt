@@ -3,17 +3,19 @@ package com.matttax.youtubedownloader.library.repositories
 import com.matttax.youtubedownloader.library.repositories.model.MediaItem
 import com.matttax.youtubedownloader.library.datasource.MediaDatabase
 import com.matttax.youtubedownloader.library.datasource.entities.MediaItemEntity
-import com.matttax.youtubedownloader.library.repositories.EntityMapper.toMediaItem
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import java.io.File
+import com.matttax.youtubedownloader.library.datasource.entities.MediaToPlaylistEntity
+import com.matttax.youtubedownloader.library.repositories.EntityMapper.toMediaItemFlow
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 class MediaRepository @Inject constructor(
     mediaDatabase: MediaDatabase
 ) {
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val mediaItemDao = mediaDatabase.getMediaItemDao()
+    private val mediaToPlaylistDao = mediaDatabase.getMediaToPlaylistDao()
 
     fun getAllMedia(): Flow<List<MediaItem>> = mediaItemDao.getAll().toMediaItemFlow()
 
@@ -22,6 +24,22 @@ class MediaRepository @Inject constructor(
     fun getAudios(): Flow<List<MediaItem>> = mediaItemDao.getAudios().toMediaItemFlow()
 
     fun getByAuthor(authorName: String) = mediaItemDao.getByAuthor(authorName).toMediaItemFlow()
+
+    fun deleteByPath(path: String) = mediaItemDao.deleteByPath(path)
+
+    fun getMediaItemPlaylistsById(id: Long) = mediaToPlaylistDao.getMediaPlaylistsIds(id)
+
+    fun addMediaItemToPlaylists(mediaId: Long, playlists: List<Int>) {
+        playlists.forEach {
+            mediaToPlaylistDao.insertMediaItemToPlaylist(
+                MediaToPlaylistEntity(
+                    mediaId = mediaId,
+                    playlistId = it,
+                    position = 0
+                )
+            )
+        }
+    }
 
     fun addMediaItem(mediaItem: MediaItem) {
         mediaItemDao.insertMediaItem(
@@ -38,10 +56,14 @@ class MediaRepository @Inject constructor(
         )
     }
 
-    private fun Flow<List<MediaItemEntity>>.toMediaItemFlow(): Flow<List<MediaItem>> {
-        return map { it
-            .filter { entity -> File(entity.path).exists() }
-            .map { entity -> entity.toMediaItem() }
-        }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun getAllFromPlaylist(id: Int): Flow<List<MediaItem>> {
+        return mediaToPlaylistDao
+            .getByPlaylistId(id)
+            .map {
+                it.map { media -> media.mediaId }
+            }.flatMapConcat { ids ->
+                mediaItemDao.getByIds(ids)
+            }.toMediaItemFlow()
     }
 }

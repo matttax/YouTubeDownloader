@@ -22,7 +22,7 @@ import kotlin.time.Duration.Companion.seconds
 fun MediaItem(
     videoData: UiMediaModel,
     onClick: (String) -> Unit,
-    onLongClick: (String) -> Unit = { }
+    onLongClick: (String) -> Unit = { },
 ) {
     Column {
         Row(

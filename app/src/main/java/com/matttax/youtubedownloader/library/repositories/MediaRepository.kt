@@ -1,11 +1,10 @@
 package com.matttax.youtubedownloader.library.repositories
 
-import com.matttax.youtubedownloader.library.MediaItem
+import com.matttax.youtubedownloader.library.repositories.model.MediaItem
 import com.matttax.youtubedownloader.library.datasource.MediaDatabase
 import com.matttax.youtubedownloader.library.datasource.entities.MediaItemEntity
-import com.matttax.youtubedownloader.library.toMediaItem
+import com.matttax.youtubedownloader.library.repositories.EntityMapper.toMediaItem
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import java.io.File
 import javax.inject.Inject
@@ -45,5 +44,4 @@ class MediaRepository @Inject constructor(
             .map { entity -> entity.toMediaItem() }
         }
     }
-
 }

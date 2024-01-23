@@ -8,7 +8,7 @@ import com.matttax.youtubedownloader.core.config.SearchConfig
 import com.matttax.youtubedownloader.core.config.SortedBy
 import com.matttax.youtubedownloader.core.config.Uploaded
 import com.matttax.youtubedownloader.core.model.*
-import com.matttax.youtubedownloader.library.MediaItem
+import com.matttax.youtubedownloader.library.repositories.model.MediaItem
 import com.matttax.youtubedownloader.library.repositories.MediaRepository
 import com.matttax.youtubedownloader.player.PlayerDelegate
 import com.matttax.youtubedownloader.settings.SettingsManager

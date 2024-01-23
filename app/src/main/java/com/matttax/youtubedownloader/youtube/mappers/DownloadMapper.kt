@@ -1,8 +1,6 @@
 package com.matttax.youtubedownloader.youtube.mappers
 
 import com.matttax.youtubedownloader.core.model.YoutubeStreamable
-import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
-import com.matttax.youtubedownloader.library.MediaItem
 import com.matttax.youtubedownloader.player.model.MediaItemLink
 import com.matttax.youtubedownloader.player.model.MediaStreamingOptions
 

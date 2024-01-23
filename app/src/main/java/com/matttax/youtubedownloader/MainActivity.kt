@@ -23,8 +23,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
-import com.matttax.youtubedownloader.library.LibraryScreen
-import com.matttax.youtubedownloader.library.LibraryViewModel
+import com.matttax.youtubedownloader.library.presentation.ui.LibraryScreen
+import com.matttax.youtubedownloader.library.presentation.LibraryViewModel
 import com.matttax.youtubedownloader.navigation.BottomNavigationItems
 import com.matttax.youtubedownloader.navigation.ui.BottomNavigationBar
 import com.matttax.youtubedownloader.settings.presentation.SettingsViewModel
@@ -43,8 +43,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val searchViewModel: SearchViewModel by viewModels()
-            val settingsViewModel: SettingsViewModel by viewModels()
-            val libraryViewModel: LibraryViewModel by viewModels()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             Column {
                 AnimatedContent(
@@ -78,7 +76,7 @@ class MainActivity : ComponentActivity() {
                 }
                 NavHost(
                     navController = navController,
-                    startDestination = BottomNavigationItems.YOUTUBE.routeName
+                    startDestination = BottomNavigationItems.LIBRARY.routeName
                 ) {
                     composable(route = BottomNavigationItems.YOUTUBE.routeName) {
                         MediaData(
@@ -87,6 +85,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable(route = BottomNavigationItems.LIBRARY.routeName) {
+                        val libraryViewModel: LibraryViewModel by viewModels()
                         searchViewModel.onQuit()
                         LibraryScreen(
                             modifier = Modifier.fillMaxHeight(0.95f),
@@ -94,6 +93,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable(route = BottomNavigationItems.SETTINGS.routeName) {
+                        val settingsViewModel: SettingsViewModel by viewModels()
                         searchViewModel.onQuit()
                         SettingsScreen(
                             modifier = Modifier.fillMaxHeight(0.95f),

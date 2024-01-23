@@ -1,8 +1,6 @@
 package com.matttax.youtubedownloader.core.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -19,17 +17,22 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalGlideComposeApi::class)
+@OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun MediaItem(videoData: UiMediaModel, onClick: (String) -> Unit) {
+fun MediaItem(
+    videoData: UiMediaModel,
+    onClick: (String) -> Unit,
+    onLongClick: (String) -> Unit = { }
+) {
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(4.dp)
-                .clickable {
-                    onClick(videoData.id)
-                },
+                .combinedClickable (
+                    onClick = { onClick(videoData.id) },
+                    onLongClick = { onLongClick(videoData.id) }
+                ),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {

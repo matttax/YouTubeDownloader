@@ -22,7 +22,7 @@ fun BottomNavigationBar(navController: NavController) {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {
-        var selectedBottomItem by rememberSaveable { mutableStateOf(BottomNavigationItems.YOUTUBE) }
+        var selectedBottomItem by rememberSaveable { mutableStateOf(BottomNavigationItems.LIBRARY) }
 
         Spacer(modifier = Modifier.weight(0.4f))
         BottomNavigationItem(

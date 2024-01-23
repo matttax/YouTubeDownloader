@@ -154,13 +154,14 @@ fun MediaData(
                             }
                         }
                     } else {
-                        MediaItem(videoList[it].toUiModel()) { id ->
-                            run {
+                        MediaItem(
+                            videoData = videoList[it].toUiModel(),
+                            onClick = { id ->
                                 focusManager.clearFocus()
                                 selectedVideo = it
                                 viewModel.onExtractData(id)
                             }
-                        }
+                        )
                     }
                 }
                 if (isLoadingPage) {

@@ -55,7 +55,10 @@ fun Playlists(
         YesNoDialog(
             text = "New playlist",
             onYes = { onNewCreate(newPlaylistName) },
-            onDismiss = { showDialog = false },
+            onDismiss = {
+                showDialog = false
+                newPlaylistName = ""
+            },
             yesText = "Create"
         ) {
             TextField(

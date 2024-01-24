@@ -6,6 +6,7 @@ import com.matttax.youtubedownloader.core.VideoSearcher
 import com.matttax.youtubedownloader.youtube.usecases.ExtractDataUseCase
 import com.matttax.youtubedownloader.youtube.usecases.SearchVideosUseCase
 import com.matttax.youtubedownloader.youtube.DataExtractorImpl
+import com.matttax.youtubedownloader.youtube.search.SearchCache
 import com.matttax.youtubedownloader.youtube.search.VideoSearcherImpl
 import dagger.Module
 import dagger.Provides
@@ -37,13 +38,13 @@ object YoutubeModule {
 
     @Provides
     @ViewModelScoped
-    fun provideSearchVideoUseCase(videoSearcher: VideoSearcher): SearchVideosUseCase {
-        return SearchVideosUseCase(videoSearcher)
+    fun provideSearchVideoUseCase(videoSearcher: VideoSearcher, searchCache: SearchCache): SearchVideosUseCase {
+        return SearchVideosUseCase(videoSearcher, searchCache)
     }
 
     @Provides
     @ViewModelScoped
-    fun provideExtractDataUseCase(dataExtractor: DataExtractor): ExtractDataUseCase {
-        return ExtractDataUseCase(dataExtractor)
+    fun provideExtractDataUseCase(dataExtractor: DataExtractor, searchCache: SearchCache): ExtractDataUseCase {
+        return ExtractDataUseCase(dataExtractor, searchCache)
     }
 }

@@ -2,13 +2,10 @@ package com.matttax.youtubedownloader.youtube.presentation.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -16,20 +13,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
 import com.matttax.youtubedownloader.core.ui.MediaItem
 import com.matttax.youtubedownloader.core.ui.Player
 import com.matttax.youtubedownloader.core.ui.UiMediaModel
-import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
-import com.matttax.youtubedownloader.youtube.presentation.Error
-import com.matttax.youtubedownloader.youtube.presentation.PagingState
+import com.matttax.youtubedownloader.youtube.presentation.LoadingError
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
-import com.matttax.youtubedownloader.youtube.presentation.YoutubeSearchState
-import kotlinx.coroutines.flow.StateFlow
+import com.matttax.youtubedownloader.youtube.presentation.states.PagingState
+import com.matttax.youtubedownloader.youtube.presentation.states.YoutubeSearchState
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -51,10 +43,10 @@ fun YoutubeSearchScreen(
     LaunchedEffect(Unit) {
         viewModel.errorFlow.collectLatest {
             when(it) {
-                is Error.NoStreamableLinkFound -> snackbarHostState.showSnackbar(
+                is LoadingError.NoStreamableLinkFound -> snackbarHostState.showSnackbar(
                     "No streaming link found\n${it.reason}"
                 )
-                is Error.NoFormatOptionsAvailable -> snackbarHostState.showSnackbar(
+                is LoadingError.NoFormatOptionsAvailable -> snackbarHostState.showSnackbar(
                     "No format options available"
                 )
             }
@@ -191,7 +183,10 @@ fun YoutubeSearchScreen(
                                             )
                                         }
                                     PagingState.NETWORK_ERROR ->
-                                        ErrorScreen(modifier = Modifier.fillMaxWidth().height(100.dp), viewModel::onNextPage)
+                                        ErrorScreen(
+                                            modifier = Modifier.fillMaxWidth().height(100.dp),
+                                            onRetry = viewModel::onNextPage
+                                        )
                                     else -> Unit
                                 }
                             }
@@ -206,42 +201,12 @@ fun YoutubeSearchScreen(
     }
     
     BackHandler {
-        if (videoReady) {
-            focusManager.clearFocus()
-        } else {
-            onBackPressedDispatcher?.onBackPressed()
+        focusManager.clearFocus()
+        if (currentStreamable != null) {
+            viewModel.onStopPlaying()
+            selectedVideo = null
         }
     }
-}
-
-@Composable
-fun SearchBar(
-    searchText: StateFlow<String>,
-    onChange: (String) -> Unit,
-    onSearch: () -> Unit
-) {
-    val query by searchText.collectAsState()
-    TextField(
-        modifier = Modifier
-            .background(color = Color.LightGray.copy(alpha = 0.2f))
-            .fillMaxWidth()
-            .padding(5.dp),
-        value = query,
-        onValueChange = onChange,
-        placeholder = { Text("Search") },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(
-            onSearch = { onSearch() }
-        ),
-        shape = RoundedCornerShape(20),
-        colors = TextFieldDefaults.colors(
-            focusedIndicatorColor = YouTubeRed,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.LightGray.copy(alpha = 0.2f),
-        ),
-        textStyle = TextStyle.Default.copy(fontSize = 16.sp)
-    )
 }
 
 fun YoutubeVideoMetadata.toUiModel(): UiMediaModel {

@@ -18,10 +18,12 @@ import com.matttax.youtubedownloader.youtube.MediaDownloader
 import com.matttax.youtubedownloader.youtube.mappers.getStreamingOptions
 import com.matttax.youtubedownloader.youtube.presentation.states.DownloadState
 import com.matttax.youtubedownloader.youtube.presentation.states.UriSelectionState
+import com.matttax.youtubedownloader.youtube.search.SearchException
 import com.matttax.youtubedownloader.youtube.usecases.ExtractDataUseCase
 import com.matttax.youtubedownloader.youtube.usecases.SearchVideosUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,20 +48,20 @@ class SearchViewModel @Inject constructor(
     private val downloadingCache =
         Collections.synchronizedMap(HashMap<String, MutableStateFlow<DownloadState>>())
 
-    private val _videoList = MutableStateFlow<List<YoutubeVideoMetadata>>(emptyList())
+    private val _searchState = MutableStateFlow<YoutubeSearchState>(
+        YoutubeSearchState.Results(emptyList())
+    )
     private val _currentStreamable = MutableStateFlow<YoutubeStreamable?>(null)
     private val _searchText = MutableStateFlow("")
-    private val _isSearching = MutableStateFlow(false)
-    private val _isLoadingPage = MutableStateFlow(false)
+    private val _loadingPageState = MutableStateFlow(PagingState.NOTHING_TO_LOAD)
     private val _searchConfig = MutableStateFlow(
         SearchConfig(allowCorrection = searchSettings.isAutocorrectionOn)
     )
     private val _uriSelectionState = MutableStateFlow<UriSelectionState?>(null)
 
-    val videoList = _videoList.asStateFlow()
+    val searchState = _searchState.asStateFlow()
     val searchText = _searchText.asStateFlow()
-    val isSearching = _isSearching.asStateFlow()
-    val isLoadingPage = _isLoadingPage.asStateFlow()
+    val pagingState = _loadingPageState.asStateFlow()
     val currentStreamable = _currentStreamable.asStateFlow()
     val searchConfig = _searchConfig.asStateFlow()
     val uriSelectionState = _uriSelectionState.asStateFlow()
@@ -67,6 +69,9 @@ class SearchViewModel @Inject constructor(
     val isVideoReady = playerDelegate.isVideoReady.combine(
         _currentStreamable.map { it != null }
     ) { playerReady, streamableExists -> playerReady && streamableExists }
+
+    private val errorChanel = Channel<Error>()
+    val errorFlow = errorChanel.receiveAsFlow()
 
     init {
         onSearch("")
@@ -81,31 +86,47 @@ class SearchViewModel @Inject constructor(
         return playerDelegate.exoPlayer
     }
 
-    fun onSearch(text: String) {
+    fun onSearch(text: String = _searchText.value) {
         searchSettings = settingsManager.getSearchSettings()
         playerDelegate.clear()
         lastSearchedText = text
         _currentStreamable.value = null
         viewModelScope.launch {
-            _isSearching.value = true
-            _videoList.value = withContext(Dispatchers.IO) {
-                searchVideosUseCase
-                    .executeSearch(text, _searchConfig.value)
-                    .filterBySettings()
+            _searchState.value = YoutubeSearchState.Loading
+            _searchState.value = try {
+                withContext(Dispatchers.IO) {
+                    val list = searchVideosUseCase
+                        .executeSearch(text, _searchConfig.value)
+                        .filterBySettings()
+                    YoutubeSearchState.Results(list)
+                }
+            } catch (searchEx: SearchException.SearchFailedException) {
+                YoutubeSearchState.NetworkError
             }
-            _isSearching.value = false
         }
     }
 
     fun onNextPage() {
         searchSettings = settingsManager.getSearchSettings()
         viewModelScope.launch {
-            _isLoadingPage.value = true
+            _loadingPageState.value = PagingState.LOADING
             if (_searchText.value != lastSearchedText) return@launch
-            _videoList.value = withContext(Dispatchers.IO) {
-                _videoList.value + searchVideosUseCase.searchFurther().filterBySettings()
+            try {
+                _searchState.update {
+                    when (it) {
+                        is YoutubeSearchState.Results -> it.copy(
+                            videoList = withContext(Dispatchers.IO) {
+                                it.videoList + searchVideosUseCase.searchFurther()
+                                    .filterBySettings()
+                            }
+                        )
+                        else -> it
+                    }
+                }
+                _loadingPageState.value = PagingState.NOTHING_TO_LOAD
+            } catch (searchException: SearchException) {
+                _loadingPageState.value = PagingState.NETWORK_ERROR
             }
-            _isLoadingPage.value = false
         }
     }
 
@@ -123,7 +144,12 @@ class SearchViewModel @Inject constructor(
                 playerDelegate.setStreamingOptions(it.getStreamingOptions())
                 playerDelegate.play(newFormat)
             } catch (noElement: NoSuchElementException) {
-
+                val error = if (it.metadata.isLive) {
+                    Error.NoStreamableLinkFound("Lives cannot be streamed")
+                } else if (it.metadata.isMovie == true) {
+                    Error.NoStreamableLinkFound("Not enough rights to stream movies")
+                } else Error.NoStreamableLinkFound()
+                errorChanel.send(error)
             }
         }
         _uriSelectionState.value = getInitialSelectionState()
@@ -145,11 +171,11 @@ class SearchViewModel @Inject constructor(
                     addToRepo(currentMetadata, format)
                 }
                 .launchIn(viewModelScope)
-        } ?: throw Exception() //TODO()
+        } ?: noStreamableCrash()
     }
 
     fun getCurrentDownloadState(): StateFlow<DownloadState> {
-        val id = currentStreamable.value?.metadata?.id ?: throw Exception() //TODO()
+        val id = currentStreamable.value?.metadata?.id ?: noStreamableCrash()
         return getMutableDownloadState(id).asStateFlow()
     }
 
@@ -180,13 +206,17 @@ class SearchViewModel @Inject constructor(
             || _uriSelectionState.value == null
             || _currentStreamable.value == null
         ) return
-        playerDelegate.play(
-            format = when(newMediaFormat) {
-                MediaFormat.AUDIO -> _currentStreamable.value!!.audioFormats.first()
-                MediaFormat.VIDEO -> _currentStreamable.value!!.videoFormats.first()
-            },
-            savePosition = true
-        ) //TODO()
+        try {
+            playerDelegate.play(
+                format = when (newMediaFormat) {
+                    MediaFormat.AUDIO -> _currentStreamable.value!!.audioFormats.first()
+                    MediaFormat.VIDEO -> _currentStreamable.value!!.videoFormats.first()
+                },
+                savePosition = true
+            )
+        } catch (noElement: NoSuchElementException) {
+            notifyNoStreamableLink()
+        }
         _uriSelectionState.value = getInitialSelectionState(newMediaFormat)
     }
 
@@ -194,20 +224,26 @@ class SearchViewModel @Inject constructor(
         when(newQuality) {
             is YoutubeAudioQuality -> onAudioQualityChanged(newQuality)
             is YoutubeVideoQuality -> onVideoQualityChanged(newQuality)
-            else -> throw Exception() //TODO()
+            else -> throw IllegalArgumentException("Not a YoutubeQuality class")
         }
     }
 
     fun onMimeTypeChanged(mimeType: String) {
         val streamableStable = _currentStreamable.value ?: return
         val currentPlaying = playerDelegate.playing ?: return
-        val newFormat = when(currentPlaying) {
-            is Format.Audio ->
-                streamableStable.audioFormats.first { it.mimeType == mimeType && currentPlaying.quality == it.quality }
-            is Format.Video ->
-                streamableStable.videoFormats.first { it.mimeType == mimeType && currentPlaying.quality == it.quality }
-        } //TODO()
-        playerDelegate.play(format = newFormat, savePosition = true)
+        try {
+            val newFormat = when (currentPlaying) {
+                is Format.Audio ->
+                    streamableStable.audioFormats
+                        .first { it.mimeType == mimeType && currentPlaying.quality == it.quality }
+                is Format.Video ->
+                    streamableStable.videoFormats
+                        .first { it.mimeType == mimeType && currentPlaying.quality == it.quality }
+            }
+            playerDelegate.play(format = newFormat, savePosition = true)
+        } catch (noElement: NoSuchElementException) {
+            notifyNoStreamableLink()
+        }
         _uriSelectionState.update {
             it?.copy(
                 selectedMime = mimeType,
@@ -228,8 +264,12 @@ class SearchViewModel @Inject constructor(
 
     private fun onVideoQualityChanged(newQuality: YoutubeVideoQuality) {
         val streamableStable = _currentStreamable.value ?: return
-        val newFormat = streamableStable.videoFormats.first { it.quality == newQuality } //TODO()
-        playerDelegate.play(newFormat, savePosition = true)
+        try {
+            val newFormat = streamableStable.videoFormats.first { it.quality == newQuality }
+            playerDelegate.play(newFormat, savePosition = true)
+        } catch (ex: NoSuchElementException) {
+            notifyNoStreamableLink()
+        }
         _uriSelectionState.value = _uriSelectionState.value?.copy(
             selectedQuality = "${newQuality.pixels}p",
             selectedMime = playerDelegate.playing?.mimeType ?: "",
@@ -239,8 +279,12 @@ class SearchViewModel @Inject constructor(
 
     private fun onAudioQualityChanged(newQuality: YoutubeAudioQuality) {
         val streamableStable = _currentStreamable.value ?: return
-        val newFormat = streamableStable.audioFormats.first { it.quality == newQuality } //TODO()
-        playerDelegate.play(newFormat, savePosition = true)
+        try {
+            val newFormat = streamableStable.audioFormats.first { it.quality == newQuality }
+            playerDelegate.play(newFormat, savePosition = true)
+        } catch (ex: NoSuchElementException) {
+            notifyNoStreamableLink()
+        }
         _uriSelectionState.value = _uriSelectionState.value?.copy(
             selectedQuality = newQuality.text,
             selectedMime = playerDelegate.playing?.mimeType ?: "",
@@ -256,7 +300,9 @@ class SearchViewModel @Inject constructor(
             || currentPlaying == null
             || (currentOptions.video.isEmpty() && currentOptions.audio.isEmpty())
         ) {
-            throw Exception() //TODO()
+            viewModelScope.launch { errorChanel.send(Error.NoFormatOptionsAvailable) }
+            _currentStreamable.value = null
+            return UriSelectionState()
         }
         val (formatOptions, selectedFormat) = if (
             currentOptions.video.isNotEmpty() && currentOptions.audio.isNotEmpty()
@@ -291,15 +337,17 @@ class SearchViewModel @Inject constructor(
                 MediaFormat.VIDEO -> it.video.keys.map { quality -> "${quality.pixels}p" }
                 MediaFormat.AUDIO -> it.audio.keys.map { quality -> quality.text }
             }
-        } ?: throw Exception() //TODO()
+        } ?: emptyList()
     }
 
     private fun getMimeOptionsAudio(selectedQuality: YoutubeAudioQuality): List<String> {
-        return playerDelegate.streamingOptions?.audio?.get(selectedQuality)?.map { it.mimeType } ?: emptyList()
+        return playerDelegate.streamingOptions?.audio?.get(selectedQuality)
+            ?.map { it.mimeType } ?: emptyList()
     }
 
     private fun getMimeOptionsVideo(selectedQuality: YoutubeVideoQuality): List<String> {
-        return playerDelegate.streamingOptions?.video?.get(selectedQuality)?.map { it.mimeType } ?: emptyList()
+        return playerDelegate.streamingOptions?.video?.get(selectedQuality)
+            ?.map { it.mimeType } ?: emptyList()
     }
 
     private fun getMutableDownloadState(id: String): MutableStateFlow<DownloadState> {
@@ -320,13 +368,21 @@ class SearchViewModel @Inject constructor(
                     title = name,
                     author = author,
                     description = description,
-                    thumbnailUri = thumbnailUri,
+                    thumbnailUri = mediaDownloader.getThumbnailPath(format.url) ?: thumbnailUri,
                     hasVideo = format is Format.Video,
                     durationSeconds = durationSeconds,
                     path = mediaDownloader.getPath(format.url)
                 )
             )
         }
+    }
+
+    private fun notifyNoStreamableLink() {
+        viewModelScope.launch { errorChanel.send(Error.NoStreamableLinkFound()) }
+    }
+
+    private fun noStreamableCrash(): Nothing {
+        throw UnsupportedOperationException("No video is selected")
     }
 
     private fun List<YoutubeVideoMetadata>.filterBySettings(): List<YoutubeVideoMetadata> {
@@ -340,4 +396,21 @@ class SearchViewModel @Inject constructor(
             } else true
         }
     }
+}
+
+sealed class Error {
+    data class NoStreamableLinkFound(val reason: String? = null): Error()
+    object NoFormatOptionsAvailable: Error()
+}
+
+sealed class YoutubeSearchState {
+    data class Results(val videoList: List<YoutubeVideoMetadata>): YoutubeSearchState()
+    object NetworkError: YoutubeSearchState()
+    object Loading: YoutubeSearchState()
+}
+
+enum class PagingState {
+    NOTHING_TO_LOAD,
+    LOADING,
+    NETWORK_ERROR
 }

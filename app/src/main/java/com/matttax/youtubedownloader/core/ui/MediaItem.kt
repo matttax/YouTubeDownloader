@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,12 +39,10 @@ fun MediaItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .border(
-                        width = 2.dp,
-                        color = Color.Black,
-                        shape = RoundedCornerShape(2.dp)
-                    ).weight(0.3f),
+                    .size(height = 100.dp, width = 120.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .border(width = 2.dp, color = Color.Black)
+                    .weight(0.9f),
                 contentAlignment = Alignment.BottomEnd
             ) {
                 GlideImage(

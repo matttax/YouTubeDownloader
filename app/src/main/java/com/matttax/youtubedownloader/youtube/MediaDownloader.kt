@@ -22,13 +22,16 @@ class MediaDownloader @Inject constructor(
 
     private val downloadManager: DownloadManager =
         context.getSystemService(DownloadManager::class.java)
-    private val downloadedPaths = Collections.synchronizedMap(HashMap<String, String>())
+    private val downloadedMediaPaths = Collections.synchronizedMap(HashMap<String, String>())
+    private val downloadedThumbnailPaths = Collections.synchronizedMap(HashMap<String, String>())
 
-    fun download(format: Format, title: String): Flow<Float> {
+    private val regex = Regex("[^A-Za-z0-9 ]")
+
+    fun download(format: Format, title: String, thumbnailUri: String? = null): Flow<Float> {
         val directory = Environment.DIRECTORY_DOWNLOADS
         val ext = extractFormatFromMimeType(format.mimeType) ?: ""
         val subPath =
-            "${Regex("[^A-Za-z0-9 ]").replace(format.url.takeLast(25), "")}$ext"
+            "${regex.replace(format.url.takeLast(25), "")}$ext"
         val request = DownloadManager.Request(format.url.toUri())
             .setTitle(title)
             .setMimeType(format.mimeType)
@@ -36,12 +39,34 @@ class MediaDownloader @Inject constructor(
                 DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED or DownloadManager.Request.VISIBILITY_VISIBLE
             ).setDestinationInExternalPublicDir(directory, subPath)
         val downloadId = downloadManager.enqueue(request)
-        downloadedPaths[format.url] = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/$subPath"
+        downloadedMediaPaths[format.url] =
+            "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/$subPath"
+        if (thumbnailUri != null) {
+            downloadThumbnail(format.url, title, thumbnailUri)
+        }
         return progressFlow(downloadId)
     }
 
     fun getPath(uri: String): String {
-        return downloadedPaths[uri] ?: throw Exception() //TODO()
+        return downloadedMediaPaths[uri] ?: ""
+    }
+
+    fun getThumbnailPath(uri: String): String? {
+        return downloadedThumbnailPaths[uri]
+    }
+
+    private fun downloadThumbnail(key: String, title: String, uri: String) {
+        val subPath =
+            "${regex.replace("$title$key".takeLast(30), "")}.jpeg"
+        val request = DownloadManager.Request(uri.toUri())
+            .setTitle(title)
+            .setMimeType("image/jpeg")
+            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN).setDestinationInExternalPublicDir(
+                Environment.DIRECTORY_DOWNLOADS.plus("/.youtube_thumbnails"), subPath
+            )
+        downloadManager.enqueue(request)
+        downloadedMediaPaths[key] =
+            "${Environment.DIRECTORY_DOWNLOADS}/.youtube_thumbnails/$subPath"
     }
 
     private fun progressFlow(id: Long) = flow {

@@ -30,7 +30,7 @@ import com.matttax.youtubedownloader.navigation.ui.BottomNavigationBar
 import com.matttax.youtubedownloader.settings.presentation.SettingsViewModel
 import com.matttax.youtubedownloader.settings.presentation.ui.SettingsScreen
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
-import com.matttax.youtubedownloader.youtube.presentation.ui.MediaData
+import com.matttax.youtubedownloader.youtube.presentation.ui.YoutubeSearchScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -79,7 +79,7 @@ class MainActivity : ComponentActivity() {
                     startDestination = BottomNavigationItems.LIBRARY.routeName
                 ) {
                     composable(route = BottomNavigationItems.YOUTUBE.routeName) {
-                        MediaData(
+                        YoutubeSearchScreen(
                             modifier = Modifier.fillMaxHeight(0.95f),
                             viewModel = searchViewModel
                         )

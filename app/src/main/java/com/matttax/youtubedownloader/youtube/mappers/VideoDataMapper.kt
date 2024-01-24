@@ -18,7 +18,7 @@ object VideoDataMapper {
         viewCount = viewCount(),
         isLive = isLive,
         isMovie = isMovie,
-        thumbnailUri = thumbnails().first() ?: "",
+        thumbnailUri = thumbnails().last() ?: "",
         durationSeconds = lengthSeconds()
     )
 
@@ -29,7 +29,7 @@ object VideoDataMapper {
         author = author() ?: "Unknown",
         viewCount = viewCount(),
         isLive = isLive,
-        thumbnailUri = thumbnails().first() ?: "",
+        thumbnailUri = thumbnails().last() ?: "",
         durationSeconds = lengthSeconds()
     )
 

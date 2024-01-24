@@ -57,10 +57,10 @@ class MediaDownloader @Inject constructor(
 
     private fun downloadThumbnail(key: String, title: String, uri: String) {
         val subPath =
-            "${regex.replace("$title$key".takeLast(30), "")}.jpeg"
+            "${regex.replace("$title$key".takeLast(30), "")}.jpg"
         val request = DownloadManager.Request(uri.toUri())
             .setTitle(title)
-            .setMimeType("image/jpeg")
+            .setMimeType("image/jpg")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN).setDestinationInExternalPublicDir(
                 Environment.DIRECTORY_DOWNLOADS.plus("/.youtube_thumbnails"), subPath
             )

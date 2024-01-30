@@ -1,10 +1,8 @@
-package com.matttax.youtubedownloader.youtube.mappers
+package com.matttax.youtubedownloader.core.model
 
 import com.github.kiulian.downloader.model.search.SearchResultVideoDetails
 import com.github.kiulian.downloader.model.videos.VideoDetails
 import com.github.kiulian.downloader.model.videos.VideoInfo
-import com.matttax.youtubedownloader.core.model.YoutubeStreamable
-import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
 import com.matttax.youtubedownloader.youtube.mappers.FormatMapper.toYoutubeAudioFormat
 import com.matttax.youtubedownloader.youtube.mappers.FormatMapper.toYoutubeVideoFormat
 

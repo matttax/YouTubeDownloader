@@ -126,7 +126,7 @@ class SearchViewModel @Inject constructor(
                     }
                 }
                 _loadingPageState.value = PagingState.NOTHING_TO_LOAD
-            } catch (searchException: SearchException) {
+            } catch (searchException: SearchException.SearchFailedException) {
                 _loadingPageState.value = PagingState.NETWORK_ERROR
             }
         }

@@ -26,8 +26,11 @@ object YoutubeModule {
 
     @Provides
     @ViewModelScoped
-    fun provideVideoSearcher(youtubeDownloader: YoutubeDownloader): VideoSearcherImpl {
-        return VideoSearcherImpl(youtubeDownloader)
+    fun provideVideoSearcher(
+        youtubeDownloader: YoutubeDownloader,
+        searchCache: SearchCache
+    ): VideoSearcherImpl {
+        return VideoSearcherImpl(youtubeDownloader, searchCache)
     }
 
     @Provides
@@ -38,8 +41,8 @@ object YoutubeModule {
 
     @Provides
     @ViewModelScoped
-    fun provideSearchVideoUseCase(videoSearcher: VideoSearcher, searchCache: SearchCache): SearchVideosUseCase {
-        return SearchVideosUseCase(videoSearcher, searchCache)
+    fun provideSearchVideoUseCase(videoSearcher: VideoSearcher): SearchVideosUseCase {
+        return SearchVideosUseCase(videoSearcher)
     }
 
     @Provides

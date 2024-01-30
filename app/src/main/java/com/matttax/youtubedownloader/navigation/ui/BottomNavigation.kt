@@ -32,7 +32,9 @@ fun BottomNavigationBar(navController: NavController) {
             selectionCondition = { selectedBottomItem == BottomNavigationItems.LIBRARY },
             onClick = {
                 selectedBottomItem = BottomNavigationItems.LIBRARY
-                navController.navigate(BottomNavigationItems.LIBRARY.routeName)
+                navController.navigate(BottomNavigationItems.LIBRARY.routeName) {
+                    popUpTo(navController.graph.id)
+                }
             }
         )
         BottomNavigationItem(
@@ -43,7 +45,9 @@ fun BottomNavigationBar(navController: NavController) {
             selectionCondition = { selectedBottomItem == BottomNavigationItems.YOUTUBE },
             onClick = {
                 selectedBottomItem = BottomNavigationItems.YOUTUBE
-                navController.navigate(BottomNavigationItems.YOUTUBE.routeName)
+                navController.navigate(BottomNavigationItems.YOUTUBE.routeName) {
+                    popUpTo(navController.graph.id)
+                }
             }
         )
         BottomNavigationItem(
@@ -53,7 +57,9 @@ fun BottomNavigationBar(navController: NavController) {
             selectionCondition = { selectedBottomItem == BottomNavigationItems.SETTINGS },
             onClick = {
                 selectedBottomItem = BottomNavigationItems.SETTINGS
-                navController.navigate(BottomNavigationItems.SETTINGS.routeName)
+                navController.navigate(BottomNavigationItems.SETTINGS.routeName) {
+                    popUpTo(navController.graph.id)
+                }
             }
         )
         Spacer(modifier = Modifier.weight(0.4f))

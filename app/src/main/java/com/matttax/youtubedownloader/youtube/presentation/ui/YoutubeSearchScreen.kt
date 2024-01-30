@@ -27,7 +27,8 @@ import kotlinx.coroutines.flow.collectLatest
 @Composable
 fun YoutubeSearchScreen(
     modifier: Modifier,
-    viewModel: SearchViewModel
+    viewModel: SearchViewModel,
+    onBack: () -> Unit
 ) {
     val searchState by viewModel.searchState.collectAsState()
     val pagingState by viewModel.pagingState.collectAsState()
@@ -37,7 +38,6 @@ fun YoutubeSearchScreen(
     var mediaItemKey = rememberSaveable { 0 }
     var selectedVideo by rememberSaveable { mutableStateOf<Int?>(null) }
     val focusManager = LocalFocusManager.current
-    val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
@@ -205,6 +205,8 @@ fun YoutubeSearchScreen(
         if (currentStreamable != null) {
             viewModel.onStopPlaying()
             selectedVideo = null
+        } else {
+            onBack()
         }
     }
 }

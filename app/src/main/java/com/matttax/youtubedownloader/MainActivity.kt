@@ -38,7 +38,9 @@ import com.matttax.youtubedownloader.settings.presentation.SettingsViewModel
 import com.matttax.youtubedownloader.settings.presentation.ui.SettingsScreen
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
 import com.matttax.youtubedownloader.youtube.presentation.ui.YoutubeSearchScreen
+import com.matttax.youtubedownloader.youtube.search.CacheManager
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -63,7 +65,8 @@ class MainActivity : ComponentActivity() {
                     ) {
                         YoutubeSearchScreen(
                             modifier = Modifier.fillMaxHeight(0.95f),
-                            viewModel = searchViewModel
+                            viewModel = searchViewModel,
+                            onBack = { finishAffinity() }
                         )
                     }
                     composable(
@@ -75,7 +78,8 @@ class MainActivity : ComponentActivity() {
                         searchViewModel.onQuit()
                         LibraryScreen(
                             modifier = Modifier.fillMaxHeight(0.95f),
-                            viewModel = libraryViewModel
+                            viewModel = libraryViewModel,
+                            onBack = { finishAffinity() }
                         )
                     }
                     composable(

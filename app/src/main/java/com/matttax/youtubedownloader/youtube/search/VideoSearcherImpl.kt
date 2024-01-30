@@ -13,19 +13,25 @@ import com.matttax.youtubedownloader.core.config.ConfigMapper.toYoutubeDuration
 import com.matttax.youtubedownloader.core.config.ConfigMapper.toYoutubeSorting
 import com.matttax.youtubedownloader.core.config.ConfigMapper.toYoutubeUploaded
 import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
-import com.matttax.youtubedownloader.youtube.mappers.VideoDataMapper.toYoutubeVideoMetadata
+import com.matttax.youtubedownloader.core.model.VideoDataMapper.toYoutubeVideoMetadata
 
 class VideoSearcherImpl(
-    private val downloader: YoutubeDownloader
+    private val downloader: YoutubeDownloader,
+    private val searchCache: SearchCache
 ) : VideoSearcher {
 
     private var _result: SearchResult? = null
 
     override fun search(text: String, config: SearchConfig): List<YoutubeVideoMetadata> {
-        val request = buildRequest(text, config)
-        _result = downloader
-            .search(request)
-            .data()
+        searchCache.getQueryResult(text)?.let {
+            _result = it
+        } ?: run {
+            val request = buildRequest(text, config)
+            _result = downloader
+                .search(request)
+                .data()
+                .also { it?.let { cache -> searchCache.putResult(text, cache) } }
+        }
         return extractMetadata()
     }
 
@@ -35,7 +41,8 @@ class VideoSearcherImpl(
             throw SearchException.NoContinuationException("Video feed continuation not found")
         }
         val nextRequest = RequestSearchContinuation(result)
-        _result = downloader.searchContinuation(nextRequest).data()
+        downloader.searchContinuation(nextRequest).data()?.let { _result = it }
+            ?: throw SearchException.SearchFailedException()
         return extractMetadata()
     }
 

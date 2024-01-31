@@ -5,7 +5,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
 
-class CacheManager(context: Context) {
+class HistoryCacheManager(context: Context) {
 
     private val sharedPrefs = context.getSharedPreferences(CACHE_PREFERENCES, Context.MODE_PRIVATE)
     private val gson = Gson()

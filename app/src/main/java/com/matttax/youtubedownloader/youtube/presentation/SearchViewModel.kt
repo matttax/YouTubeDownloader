@@ -76,7 +76,7 @@ class SearchViewModel @Inject constructor(
     val errorFlow = loadingErrorChanel.receiveAsFlow()
 
     init {
-        onSearch("")
+        onSearch(SearchVideosUseCase.RESTORE_SEARCH_RESULTS)
     }
 
     override fun onCleared() {
@@ -109,10 +109,10 @@ class SearchViewModel @Inject constructor(
     }
 
     fun onNextPage() {
+        println("next")
         searchSettings = settingsManager.getSearchSettings()
         viewModelScope.launch {
             _loadingPageState.value = PagingState.LOADING
-            if (_searchText.value != lastSearchedText) return@launch
             try {
                 _searchState.update {
                     when (it) {

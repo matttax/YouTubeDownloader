@@ -44,7 +44,7 @@ fun TabNameBar(navBackStackEntry: NavBackStackEntry) {
                         enter = scaleIn(),
                         exit = scaleOut()
                     ),
-                text = navBackStackEntry?.destination?.route.routeToScreenName(),
+                text = navBackStackEntry.destination.route.routeToScreenName(),
                 color = Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold

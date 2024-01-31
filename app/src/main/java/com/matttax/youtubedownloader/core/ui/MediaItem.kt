@@ -39,17 +39,16 @@ fun MediaItem(
         ) {
             Box(
                 modifier = Modifier
-                    .size(height = 100.dp, width = 120.dp)
-                    .clip(RoundedCornerShape(5.dp))
-                    .border(width = 2.dp, color = Color.Black)
-                    .weight(0.9f),
+                    .size(height = 100.dp, width = 140.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .weight(1f),
                 contentAlignment = Alignment.BottomEnd
             ) {
                 GlideImage(
                     modifier = Modifier.fillMaxSize(),
                     model = videoData.thumbnailUri,
                     contentDescription = null,
-                    contentScale = ContentScale.FillHeight
+                    contentScale = ContentScale.Crop
                 )
                 Text(
                     modifier = Modifier

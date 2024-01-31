@@ -1,7 +1,7 @@
 package com.matttax.youtubedownloader.di
 
 import android.content.Context
-import com.matttax.youtubedownloader.youtube.search.CacheManager
+import com.matttax.youtubedownloader.youtube.search.HistoryCacheManager
 import com.matttax.youtubedownloader.youtube.search.SearchCache
 import dagger.Module
 import dagger.Provides
@@ -16,13 +16,13 @@ class CacheModule {
 
     @Provides
     @Singleton
-    fun provideCacheManager(@ApplicationContext applicationContext: Context): CacheManager {
-        return CacheManager(applicationContext)
+    fun provideHistoryCacheManager(@ApplicationContext applicationContext: Context): HistoryCacheManager {
+        return HistoryCacheManager(applicationContext)
     }
 
     @Provides
     @Singleton
-    fun provideSearchCache(cacheManager: CacheManager): SearchCache {
-        return SearchCache(cacheManager)
+    fun provideSearchCache(historyCacheManager: HistoryCacheManager): SearchCache {
+        return SearchCache(historyCacheManager)
     }
 }

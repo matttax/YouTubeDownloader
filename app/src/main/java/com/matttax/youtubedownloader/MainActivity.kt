@@ -1,33 +1,20 @@
 package com.matttax.youtubedownloader
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.animation.*
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
 import com.matttax.youtubedownloader.library.presentation.ui.LibraryScreen
 import com.matttax.youtubedownloader.library.presentation.LibraryViewModel
 import com.matttax.youtubedownloader.navigation.BottomNavigationItems
@@ -38,9 +25,7 @@ import com.matttax.youtubedownloader.settings.presentation.SettingsViewModel
 import com.matttax.youtubedownloader.settings.presentation.ui.SettingsScreen
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
 import com.matttax.youtubedownloader.youtube.presentation.ui.YoutubeSearchScreen
-import com.matttax.youtubedownloader.youtube.search.CacheManager
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -48,6 +33,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         installSplashScreen()
+        val sharedPrefs = applicationContext.getSharedPreferences(BASIC_SETTINGS, Context.MODE_PRIVATE)
+        val initialItem = sharedPrefs.getString(BASIC_SETTINGS_TAB_KEY, BottomNavigationItems.LIBRARY.routeName)
+            ?: BottomNavigationItems.LIBRARY.routeName
         setContent {
             val navController = rememberNavController()
             val searchViewModel: SearchViewModel by viewModels()
@@ -56,7 +44,7 @@ class MainActivity : ComponentActivity() {
                 navBackStackEntry?.let { TabNameBar(it) }
                 NavHost(
                     navController = navController,
-                    startDestination = BottomNavigationItems.LIBRARY.routeName
+                    startDestination = initialItem
                 ) {
                     composable(
                         route = BottomNavigationItems.YOUTUBE.routeName,
@@ -95,9 +83,30 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
-                BottomNavigationBar(navController)
+                BottomNavigationBar(
+                    navController,
+                    ROUTES_MAP[initialItem] ?: BottomNavigationItems.LIBRARY
+                )
+            }
+            LaunchedEffect(navBackStackEntry) {
+                sharedPrefs.edit()
+                    .putString(
+                        BASIC_SETTINGS_TAB_KEY,
+                        navBackStackEntry?.destination?.route ?: BottomNavigationItems.LIBRARY.routeName
+                    ).apply()
             }
         }
+    }
+
+    private fun NavBackStackEntry.getBottomNavigationItem(): String {
+        return destination.route ?: BottomNavigationItems.LIBRARY.routeName
+    }
+
+    companion object {
+        const val BASIC_SETTINGS = "basics"
+        const val BASIC_SETTINGS_TAB_KEY = "route"
+
+        val ROUTES_MAP = BottomNavigationItems.values().associateBy { it.routeName }
     }
 }
 

@@ -17,12 +17,12 @@ import com.matttax.youtubedownloader.R
 import com.matttax.youtubedownloader.navigation.BottomNavigationItems
 
 @Composable
-fun BottomNavigationBar(navController: NavController) {
+fun BottomNavigationBar(navController: NavController, initialItem: BottomNavigationItems) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {
-        var selectedBottomItem by rememberSaveable { mutableStateOf(BottomNavigationItems.LIBRARY) }
+        var selectedBottomItem by rememberSaveable { mutableStateOf(initialItem) }
 
         Spacer(modifier = Modifier.weight(0.4f))
         BottomNavigationItem(

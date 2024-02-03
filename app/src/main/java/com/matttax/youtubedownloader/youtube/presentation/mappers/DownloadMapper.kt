@@ -1,4 +1,4 @@
-package com.matttax.youtubedownloader.youtube.mappers
+package com.matttax.youtubedownloader.youtube.presentation.mappers
 
 import com.matttax.youtubedownloader.core.model.YoutubeStreamable
 import com.matttax.youtubedownloader.player.model.MediaItemLink

@@ -13,7 +13,7 @@ import com.matttax.youtubedownloader.core.config.ConfigMapper.toYoutubeDuration
 import com.matttax.youtubedownloader.core.config.ConfigMapper.toYoutubeSorting
 import com.matttax.youtubedownloader.core.config.ConfigMapper.toYoutubeUploaded
 import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
-import com.matttax.youtubedownloader.core.model.VideoDataMapper.toYoutubeVideoMetadata
+import com.matttax.youtubedownloader.core.model.mappers.VideoDataMapper.toYoutubeVideoMetadata
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 
@@ -27,7 +27,9 @@ class VideoSearcherImpl(
     override fun loadInitial(): List<YoutubeVideoMetadata> {
         searchCache.getCachedQueryText()?.let {
             thread {
-                search(it, SearchConfig())
+                try {
+                    search(it, SearchConfig())
+                } catch (ex: Exception) {}
             }
         }
         return searchCache.getCachedResult() ?: search("", SearchConfig())
@@ -47,6 +49,11 @@ class VideoSearcherImpl(
             )
         }
         return extractMetadata().also { searchCache.cacheResults(text, it) }
+    }
+
+    override fun refresh(): List<YoutubeVideoMetadata> {
+        searchCache.clear(searchCache.getCachedQueryText())
+        return search(searchCache.getCachedQueryText() ?: "", SearchConfig())
     }
 
     @Synchronized

@@ -9,10 +9,13 @@ class SearchVideosUseCase(
     private val videoSearcher: VideoSearcher
 ) {
     fun executeSearch(text: String, config: SearchConfig): List<YoutubeVideoMetadata> {
-        if (text == RESTORE_SEARCH_RESULTS)
-            return videoSearcher.loadInitial()
-        return videoSearcher.search(text, config)
+        return when(text) {
+            RESTORE_SEARCH_RESULTS -> videoSearcher.loadInitial()
+            REFRESH_SEARCH_RESULTS -> videoSearcher.refresh()
+            else -> videoSearcher.search(text, config)
+        }
     }
+
 
     fun searchFurther(): List<YoutubeVideoMetadata> {
         return try {
@@ -24,5 +27,6 @@ class SearchVideosUseCase(
 
     companion object {
         const val RESTORE_SEARCH_RESULTS = "@Initial@@"
+        const val REFRESH_SEARCH_RESULTS = "@Refresh@@"
     }
 }

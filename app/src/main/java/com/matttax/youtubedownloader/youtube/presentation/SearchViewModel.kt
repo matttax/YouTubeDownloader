@@ -15,7 +15,7 @@ import com.matttax.youtubedownloader.settings.SettingsManager
 import com.matttax.youtubedownloader.settings.model.PlayerSettings
 import com.matttax.youtubedownloader.settings.model.SearchSettings
 import com.matttax.youtubedownloader.youtube.MediaDownloader
-import com.matttax.youtubedownloader.youtube.mappers.getStreamingOptions
+import com.matttax.youtubedownloader.youtube.presentation.mappers.getStreamingOptions
 import com.matttax.youtubedownloader.youtube.presentation.states.DownloadState
 import com.matttax.youtubedownloader.youtube.presentation.states.PagingState
 import com.matttax.youtubedownloader.youtube.presentation.states.UriSelectionState
@@ -29,6 +29,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.NullPointerException
 import java.util.*
 import javax.inject.Inject
 import kotlin.NoSuchElementException
@@ -88,6 +89,10 @@ class SearchViewModel @Inject constructor(
         return playerDelegate.exoPlayer
     }
 
+    fun onRefresh() {
+        onSearch(SearchVideosUseCase.REFRESH_SEARCH_RESULTS)
+    }
+
     fun onSearch(text: String = _searchText.value) {
         searchSettings = settingsManager.getSearchSettings()
         playerDelegate.clear()
@@ -128,6 +133,8 @@ class SearchViewModel @Inject constructor(
                 _loadingPageState.value = PagingState.NOTHING_TO_LOAD
             } catch (searchException: SearchException.SearchFailedException) {
                 _loadingPageState.value = PagingState.NETWORK_ERROR
+            } catch (noRequestException: SearchException.NoRequestException) {
+                _searchState.value = YoutubeSearchState.NetworkError
             }
         }
     }
@@ -135,24 +142,11 @@ class SearchViewModel @Inject constructor(
     fun onExtractData(id: String) = viewModelScope.launch {
         _currentStreamable.value = null
         _currentStreamable.value = withContext(Dispatchers.IO) {
-            extractDataUseCase(id)
-        }.also {
             try {
-                val newFormat = when {
-                    it.videoFormats.isNotEmpty() -> it.videoFormats.first()
-                    it.audioFormats.isNotEmpty() -> it.audioFormats.first()
-                    else -> throw NoSuchElementException()
+                extractDataUseCase(id).also {
+                    it.tryPlay()
                 }
-                playerDelegate.setStreamingOptions(it.getStreamingOptions())
-                playerDelegate.play(newFormat)
-            } catch (noElement: NoSuchElementException) {
-                val loadingError = if (it.metadata.isLive) {
-                    LoadingError.NoStreamableLinkFound("Lives cannot be streamed")
-                } else if (it.metadata.isMovie == true) {
-                    LoadingError.NoStreamableLinkFound("Not enough rights to stream movies")
-                } else LoadingError.NoStreamableLinkFound()
-                loadingErrorChanel.send(loadingError)
-            }
+            } catch (nullEx: NullPointerException) { null }
         }
         _uriSelectionState.value = getInitialSelectionState()
     }
@@ -390,6 +384,25 @@ class SearchViewModel @Inject constructor(
 
     private fun noStreamableCrash(): Nothing {
         throw UnsupportedOperationException("No video is selected")
+    }
+
+    private suspend fun YoutubeStreamable.tryPlay() = viewModelScope.launch {
+        try {
+            val newFormat = when {
+                videoFormats.isNotEmpty() -> videoFormats.first()
+                audioFormats.isNotEmpty() -> audioFormats.first()
+                else -> throw NoSuchElementException()
+            }
+            playerDelegate.setStreamingOptions(getStreamingOptions())
+            playerDelegate.play(newFormat)
+        } catch (noElement: NoSuchElementException) {
+            val loadingError = if (metadata.isLive) {
+                LoadingError.NoStreamableLinkFound("Lives cannot be streamed")
+            } else if (metadata.isMovie == true) {
+                LoadingError.NoStreamableLinkFound("Not enough rights to stream movies")
+            } else LoadingError.NoStreamableLinkFound()
+            loadingErrorChanel.send(loadingError)
+        }
     }
 
     private fun List<YoutubeVideoMetadata>.filterBySettings(): List<YoutubeVideoMetadata> {

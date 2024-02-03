@@ -6,7 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.matttax.youtubedownloader.core.model.MediaFormat
-import com.matttax.youtubedownloader.youtube.mappers.SelectionMapper
+import com.matttax.youtubedownloader.youtube.presentation.mappers.SelectionMapper
 import com.matttax.youtubedownloader.youtube.presentation.states.UriSelectionState
 import com.matttax.youtubedownloader.youtube.presentation.ui.utils.Options
 import kotlinx.coroutines.flow.StateFlow

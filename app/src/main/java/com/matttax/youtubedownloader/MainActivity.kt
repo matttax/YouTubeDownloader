@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
@@ -52,9 +53,8 @@ class MainActivity : ComponentActivity() {
                         exitTransition = NavigationAnimations.exitTransition
                     ) {
                         YoutubeSearchScreen(
-                            modifier = Modifier.fillMaxHeight(0.95f),
-                            viewModel = searchViewModel,
-                            onBack = { finishAffinity() }
+                            modifier = Modifier.fillMaxHeight(0.95f).padding(bottom = 10.dp),
+                            viewModel = searchViewModel
                         )
                     }
                     composable(
@@ -65,9 +65,8 @@ class MainActivity : ComponentActivity() {
                         val libraryViewModel: LibraryViewModel by viewModels()
                         searchViewModel.onQuit()
                         LibraryScreen(
-                            modifier = Modifier.fillMaxHeight(0.95f),
-                            viewModel = libraryViewModel,
-                            onBack = { finishAffinity() }
+                            modifier = Modifier.fillMaxHeight(0.95f).padding(bottom = 10.dp),
+                            viewModel = libraryViewModel
                         )
                     }
                     composable(
@@ -96,10 +95,6 @@ class MainActivity : ComponentActivity() {
                     ).apply()
             }
         }
-    }
-
-    private fun NavBackStackEntry.getBottomNavigationItem(): String {
-        return destination.route ?: BottomNavigationItems.LIBRARY.routeName
     }
 
     companion object {

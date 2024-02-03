@@ -1,16 +1,22 @@
 package com.matttax.youtubedownloader.youtube.presentation.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.PullRefreshState
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.dp
@@ -18,17 +24,19 @@ import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
 import com.matttax.youtubedownloader.core.ui.MediaItem
 import com.matttax.youtubedownloader.core.ui.Player
 import com.matttax.youtubedownloader.core.ui.UiMediaModel
+import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
 import com.matttax.youtubedownloader.youtube.presentation.LoadingError
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
 import com.matttax.youtubedownloader.youtube.presentation.states.PagingState
 import com.matttax.youtubedownloader.youtube.presentation.states.YoutubeSearchState
 import kotlinx.coroutines.flow.collectLatest
+import kotlin.math.roundToInt
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun YoutubeSearchScreen(
     modifier: Modifier,
-    viewModel: SearchViewModel,
-    onBack: () -> Unit
+    viewModel: SearchViewModel
 ) {
     val searchState by viewModel.searchState.collectAsState()
     val pagingState by viewModel.pagingState.collectAsState()
@@ -38,7 +46,11 @@ fun YoutubeSearchScreen(
     var mediaItemKey = rememberSaveable { 0 }
     var selectedVideo by rememberSaveable { mutableStateOf<Int?>(null) }
     val focusManager = LocalFocusManager.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+
+
 
     LaunchedEffect(Unit) {
         viewModel.errorFlow.collectLatest {
@@ -53,12 +65,20 @@ fun YoutubeSearchScreen(
         }
     }
 
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = searchState == YoutubeSearchState.Loading,
+        refreshThreshold = 30.dp,
+        onRefresh = viewModel::onRefresh
+    )
+
+
     Scaffold(
-        modifier = modifier.padding(bottom = 5.dp),
+        modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) {
         Column {
             SearchBar(
+                interactionSource = interactionSource,
                 searchText = viewModel.searchText,
                 onChange = viewModel::onSearchTextChange
             ) {
@@ -71,11 +91,7 @@ fun YoutubeSearchScreen(
                     .padding(horizontal = 10.dp),
                 spinnerModifier = Modifier
                     .weight(0.3f)
-                    .border(
-                        width = (0.3).dp,
-                        color = Color.Black,
-                        shape = RoundedCornerShape(7.dp)
-                    ),
+                    .clip(RoundedCornerShape(7.dp)),
                 searchConfig = viewModel.searchConfig,
                 onDurationChange = viewModel::onSetDuration,
                 onUploadDateChange = viewModel::onSetUploaded,
@@ -84,6 +100,12 @@ fun YoutubeSearchScreen(
                     focusManager.clearFocus()
                     selectedVideo = null
                 }
+            )
+            Divider(
+                modifier = Modifier.padding(
+                    vertical = 3.dp,
+                    horizontal = 5.dp
+                )
             )
             when (searchState) {
                 is YoutubeSearchState.Loading -> {
@@ -99,97 +121,113 @@ fun YoutubeSearchScreen(
                 }
                 is YoutubeSearchState.Results -> {
                     (searchState as? YoutubeSearchState.Results)?.videoList?.let { list ->
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(15.dp),
+                        Box(
                             modifier = Modifier
-                                .navigationBarsPadding()
-                                .padding(5.dp),
+                                .pullRefresh(pullRefreshState),
+                            contentAlignment = Alignment.TopCenter
                         ) {
-                            items(
-                                count = list.size,
-                                key = {
-                                    mediaItemKey += 1
-                                    mediaItemKey
-                                }
+                            LazyColumn(
+                                verticalArrangement = Arrangement.spacedBy(15.dp),
+                                modifier = Modifier
+                                    .navigationBarsPadding()
+                                    .offset(
+                                        y = 20.dp + (pullRefreshState.progress * 10)
+                                            .roundToInt()
+                                            .coerceAtMost(50).dp
+                                    )
+                                    .padding(5.dp),
                             ) {
-                                if (it == list.size - 1) {
-                                    viewModel.onNextPage()
-                                }
-                                if (it == selectedVideo) {
-                                    if (videoReady) {
-                                        Column {
-                                            currentStreamable?.metadata?.let { data ->
-                                                Metadata(data = data)
+                                items(
+                                    count = list.size,
+                                    key = {
+                                        mediaItemKey += 1
+                                        mediaItemKey
+                                    }
+                                ) {
+                                    if (it == list.size - 1) {
+                                        viewModel.onNextPage()
+                                    }
+                                    if (it == selectedVideo) {
+                                        if (videoReady) {
+                                            Column {
+                                                currentStreamable?.metadata?.let { data ->
+                                                    Metadata(data = data)
+                                                }
+                                                Player(
+                                                    exoPlayer = viewModel.getExoInstance(),
+                                                    onPause = viewModel::onPlayerHidden
+                                                )
+                                                StreamingOptions(
+                                                    uriSelectionState = viewModel.uriSelectionState,
+                                                    onMediaFormatChanged = viewModel::onMediaFormatChanged,
+                                                    onQualityChanged = viewModel::onQualityChanged,
+                                                    onMimeTypeChanged = viewModel::onMimeTypeChanged
+                                                )
+                                                Spacer(
+                                                    modifier = Modifier.height(7.dp)
+                                                )
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.Center
+                                                ) {
+                                                    DownloadButton(
+                                                        downloading = viewModel.getCurrentDownloadState(),
+                                                        action = viewModel::onDownload
+                                                    )
+                                                }
                                             }
-                                            Player(
-                                                exoPlayer = viewModel.getExoInstance(),
-                                                onPause = viewModel::onPlayerHidden
-                                            )
-                                            StreamingOptions(
-                                                uriSelectionState = viewModel.uriSelectionState,
-                                                onMediaFormatChanged = viewModel::onMediaFormatChanged,
-                                                onQualityChanged = viewModel::onQualityChanged,
-                                                onMimeTypeChanged = viewModel::onMimeTypeChanged
-                                            )
-                                            Spacer(
-                                                modifier = Modifier.height(7.dp)
-                                            )
+                                        } else {
                                             Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(8.dp),
                                                 horizontalArrangement = Arrangement.Center
                                             ) {
-                                                DownloadButton(
-                                                    downloading = viewModel.getCurrentDownloadState(),
-                                                    action = viewModel::onDownload
+                                                CircularProgressIndicator(
+                                                    color = Color.Red.copy(alpha = 0.7f)
                                                 )
                                             }
                                         }
                                     } else {
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(8.dp),
-                                            horizontalArrangement = Arrangement.Center
-                                        ) {
-                                            CircularProgressIndicator(
-                                                color = Color.Red.copy(alpha = 0.7f)
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    MediaItem(
-                                        videoData = list[it].toUiModel(),
-                                        onClick = { id ->
-                                            focusManager.clearFocus()
-                                            selectedVideo = it
-                                            viewModel.onExtractData(id)
-                                        }
-                                    )
-                                }
-                            }
-                            println(pagingState.name)
-                            item {
-                                when(pagingState) {
-                                    PagingState.LOADING ->
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(8.dp),
-                                            horizontalArrangement = Arrangement.Center
-                                        ) {
-                                            CircularProgressIndicator(
-                                                color = Color.Red.copy(alpha = 0.7f)
-                                            )
-                                        }
-                                    PagingState.NETWORK_ERROR ->
-                                        ErrorScreen(
-                                            modifier = Modifier.fillMaxWidth().height(100.dp),
-                                            onRetry = viewModel::onNextPage
+                                        MediaItem(
+                                            videoData = list[it].toUiModel(),
+                                            onClick = { id ->
+                                                focusManager.clearFocus()
+                                                selectedVideo = it
+                                                viewModel.onExtractData(id)
+                                            }
                                         )
-                                    else -> Unit
+                                    }
+                                }
+                                item {
+                                    when(pagingState) {
+                                        PagingState.LOADING ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(8.dp),
+                                                horizontalArrangement = Arrangement.Center
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    color = Color.Red.copy(alpha = 0.7f)
+                                                )
+                                            }
+                                        PagingState.NETWORK_ERROR ->
+                                            ErrorScreen(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(100.dp),
+                                                onRetry = viewModel::onNextPage
+                                            )
+                                        else -> Unit
+                                    }
                                 }
                             }
+                            RefreshIndicator(
+                                pullRefreshState = pullRefreshState,
+                                refreshing = searchState == YoutubeSearchState.Loading
+                            )
                         }
                     }
                 }
@@ -200,15 +238,26 @@ fun YoutubeSearchScreen(
         }
     }
     
-    BackHandler {
-        focusManager.clearFocus()
-        if (currentStreamable != null) {
+    BackHandler(enabled = isFocused || currentStreamable != null) {
+        if (isFocused) {
+            focusManager.clearFocus()
+        } else if (currentStreamable != null) {
             viewModel.onStopPlaying()
             selectedVideo = null
-        } else {
-            onBack()
         }
     }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun RefreshIndicator(pullRefreshState: PullRefreshState, refreshing: Boolean) {
+    PullRefreshIndicator(
+        modifier = Modifier
+            .fillMaxWidth(0.5f),
+        state = pullRefreshState,
+        refreshing = refreshing,
+        contentColor = YouTubeRed
+    )
 }
 
 fun YoutubeVideoMetadata.toUiModel(): UiMediaModel {
@@ -216,3 +265,4 @@ fun YoutubeVideoMetadata.toUiModel(): UiMediaModel {
         id, thumbnailUri, name, author, durationSeconds
     )
 }
+

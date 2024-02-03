@@ -1,4 +1,4 @@
-package com.matttax.youtubedownloader.youtube.mappers
+package com.matttax.youtubedownloader.core.model.mappers
 
 import com.github.kiulian.downloader.model.videos.formats.AudioFormat
 import com.github.kiulian.downloader.model.videos.formats.VideoFormat

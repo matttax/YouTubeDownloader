@@ -16,6 +16,12 @@ class SearchCache constructor(
         queries[query] = searchResult
     }
 
+    fun clear(query: String? = null) {
+        query?.let {
+            queries.remove(it)
+        } ?: queries.clear()
+    }
+
     fun getQueryResult(query: String): SearchResult? {
         return queries[query]
     }

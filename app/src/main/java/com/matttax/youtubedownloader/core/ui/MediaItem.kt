@@ -1,6 +1,7 @@
 package com.matttax.youtubedownloader.core.ui
 
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -10,7 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,66 +28,64 @@ fun MediaItem(
     onClick: (String) -> Unit,
     onLongClick: (String) -> Unit = { },
 ) {
-    Column {
-        Row(
+    Column(
+        modifier = Modifier
+            .padding(4.dp)
+            .combinedClickable (
+                onClick = { onClick(videoData.id) },
+                onLongClick = { onLongClick(videoData.id) }
+            ),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(4.dp)
-                .combinedClickable (
-                    onClick = { onClick(videoData.id) },
-                    onLongClick = { onLongClick(videoData.id) }
-                ),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+                .aspectRatio(16 / 9f)
+                .clip(RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.BottomEnd
         ) {
-            Box(
-                modifier = Modifier
-                    .size(height = 100.dp, width = 140.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .weight(1f),
-                contentAlignment = Alignment.BottomEnd
-            ) {
-                GlideImage(
-                    modifier = Modifier.fillMaxSize(),
-                    model = videoData.thumbnailUri,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop
-                )
-                Text(
-                    modifier = Modifier
-                        .background(
-                            color = Color.Black,
-                            shape = RoundedCornerShape(50.dp)
-                        )
-                        .padding(
-                            start = 3.dp,
-                            end = 3.dp,
-                            top = 1.dp,
-                            bottom = 3.dp
-                        ),
-                    text = videoData.duration.secondsToDuration(),
-                    fontSize = 10.sp,
-                    color = Color.White
-                )
-            }
-            Spacer(
-                modifier = Modifier.weight(0.05f)
+            GlideImage(
+                modifier = Modifier.fillMaxSize(),
+                model = videoData.thumbnailUri,
+                contentDescription = null,
+                contentScale = ContentScale.Crop
             )
-            Column(
-                modifier = Modifier.weight(1.5f)
-            ) {
-                Text(
-                    text = videoData.name,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = videoData.author,
-                    maxLines = 1,
-                    color = Color.Gray,
-                    fontSize = 10.sp
-                )
-            }
+            Text(
+                modifier = Modifier
+                    .background(
+                        color = Color.Black,
+                        shape = RoundedCornerShape(50.dp)
+                    )
+                    .padding(
+                        start = 4.dp,
+                        end = 3.dp,
+                        top = 1.dp,
+                        bottom = 3.dp
+                    ),
+                text = videoData.duration.secondsToDuration(),
+                fontSize = 10.sp,
+                color = Color.White
+            )
+        }
+        Column(
+            modifier = Modifier.padding(
+                vertical = 3.dp,
+                horizontal = 5.dp
+            ),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = videoData.name,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = videoData.author,
+                maxLines = 1,
+                color = Color.Gray,
+                fontSize = 10.sp
+            )
         }
     }
 }

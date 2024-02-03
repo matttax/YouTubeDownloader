@@ -16,8 +16,7 @@ import com.matttax.youtubedownloader.library.presentation.LibraryViewModel
 @Composable
 fun LibraryScreen(
     modifier: Modifier,
-    viewModel: LibraryViewModel,
-    onBack: () -> Unit
+    viewModel: LibraryViewModel
 ) {
     val isPlaying by viewModel.isPlaying.collectAsState()
     val name by viewModel.playlistName.collectAsState()
@@ -84,13 +83,11 @@ fun LibraryScreen(
         }
     }
 
-    BackHandler(enabled = true) {
+    BackHandler(enabled = isPlaying || name != "All media") {
         if (isPlaying) {
             viewModel.onStopPlayback()
         } else if (name != "All media") {
             viewModel.loadAllMedia()
-        } else {
-            onBack()
         }
     }
 }

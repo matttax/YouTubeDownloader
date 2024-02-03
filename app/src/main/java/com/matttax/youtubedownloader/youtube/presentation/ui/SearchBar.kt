@@ -1,6 +1,7 @@
 package com.matttax.youtubedownloader.youtube.presentation.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 @Composable
 fun SearchBar(
     searchText: StateFlow<String>,
+    interactionSource: MutableInteractionSource,
     onChange: (String) -> Unit,
     onSearch: () -> Unit
 ) {
@@ -47,6 +49,7 @@ fun SearchBar(
             focusedContainerColor = Color.White,
             unfocusedContainerColor = Color.LightGray.copy(alpha = 0.2f),
         ),
-        textStyle = TextStyle.Default.copy(fontSize = 16.sp)
+        textStyle = TextStyle.Default.copy(fontSize = 16.sp),
+        interactionSource = interactionSource
     )
 }

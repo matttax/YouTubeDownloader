@@ -12,10 +12,9 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
-import com.matttax.youtubedownloader.core.ui.CheckboxOption
-import com.matttax.youtubedownloader.core.ui.MediaItem
-import com.matttax.youtubedownloader.core.ui.UiMediaModel
-import com.matttax.youtubedownloader.core.ui.YesNoDialog
+import com.matttax.youtubedownloader.core.ui.*
+import com.matttax.youtubedownloader.core.ui.PlayingState
+import com.matttax.youtubedownloader.core.ui.utils.UiMediaModel
 import com.matttax.youtubedownloader.library.presentation.LibraryViewModel
 import com.matttax.youtubedownloader.library.repositories.model.MediaItem
 
@@ -27,6 +26,8 @@ fun MediaList(
     val titleText by viewModel.playlistName.collectAsState()
     val mediaList by viewModel.mediaList.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
+    val currentPlaying by viewModel.currentPlayingUri.collectAsState()
+    val isPlaying by viewModel.isPlaying.collectAsState()
     var showOptionsFor by remember { mutableStateOf<Int?>(null) }
     val clearFocus = remember { { if (showOptionsFor != null) showOptionsFor = null } }
     val nestedScrollConnection = remember {
@@ -56,11 +57,18 @@ fun MediaList(
                 Box(
                     contentAlignment = Alignment.CenterEnd
                 ) {
-                    MediaItem(
+                    CollapsedMediaItem(
                         videoData = mediaList[index].toUiMediaModel(),
+                        playingState = when {
+                            mediaList[index].path == currentPlaying && isPlaying -> PlayingState.PLAYING
+                            mediaList[index].path == currentPlaying && !isPlaying -> PlayingState.PAUSED
+                            else -> PlayingState.NONE
+                        },
                         onClick = {
                             clearFocus()
-                            viewModel.onSetItem(index)
+                            if (mediaList[index].path == currentPlaying) {
+                                if (isPlaying) viewModel.onPausePlayback() else viewModel.onResumePlayback()
+                            } else viewModel.onSetItem(index)
                         },
                         onLongClick = {
                             showOptionsFor = if (index == showOptionsFor)

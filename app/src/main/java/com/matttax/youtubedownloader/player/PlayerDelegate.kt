@@ -23,14 +23,16 @@ class PlayerDelegate @Inject constructor(
     private val _isVideoReady = MutableStateFlow(false)
     val isVideoReady = _isVideoReady.asStateFlow()
 
+    private val mediaItemListener = MediaItemListener()
+    private val playerReadyListener = PlayerReadyListener(
+        onReady = { _isVideoReady.value = true },
+        onUnready = { _isVideoReady.value = false }
+    )
+
     init {
         exoPlayer.prepare()
-        exoPlayer.addListener(
-            PlayerReadyListener(
-                onReady = { _isVideoReady.value = true },
-                onUnready = { _isVideoReady.value = false }
-            )
-        )
+        exoPlayer.addListener(playerReadyListener)
+        exoPlayer.addListener(mediaItemListener)
     }
 
     fun play(format: Format, savePosition: Boolean = false) {
@@ -47,7 +49,8 @@ class PlayerDelegate @Inject constructor(
 
     fun play(playlist: List<String>, startPosition: Int = 0) {
         playlist.forEach {
-            exoPlayer.addMediaItem(MediaItem.fromUri(it))
+            val item = MediaItem.Builder().setUri(it).setMediaId(it).build()
+            exoPlayer.addMediaItem(item)
         }
         exoPlayer.seekTo(startPosition, C.TIME_UNSET)
         exoPlayer.play()
@@ -63,4 +66,10 @@ class PlayerDelegate @Inject constructor(
     fun clear() = exoPlayer.clearMediaItems()
 
     fun pause() = exoPlayer.pause()
+
+    fun resume() = exoPlayer.play()
+
+    fun getCurrentPlayingUri() = mediaItemListener.currentPlayingUri
+
+    fun getIsPlaying() = playerReadyListener.isPlaying
 }

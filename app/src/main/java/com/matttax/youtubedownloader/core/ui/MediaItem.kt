@@ -1,25 +1,22 @@
 package com.matttax.youtubedownloader.core.ui
 
 import androidx.compose.foundation.*
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import kotlin.time.Duration.Companion.seconds
+import com.matttax.youtubedownloader.core.ui.utils.UiMediaModel
+import com.matttax.youtubedownloader.core.ui.utils.secondsToDuration
 
 @OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -88,23 +85,4 @@ fun MediaItem(
             )
         }
     }
-}
-
-@Immutable
-data class UiMediaModel(
-    val id: String,
-    val thumbnailUri: String,
-    val name: String,
-    val author: String,
-    val duration: Int
-)
-
-fun Int.secondsToDuration(): String {
-    val hours = div(3600)
-    val minutes = mod(3600).div(60)
-    val seconds = mod(60)
-    return if (hours > 0)
-        String.format("%02d:%02d:%02d", hours, minutes, seconds)
-    else
-        String.format("%02d:%02d", minutes, seconds)
 }

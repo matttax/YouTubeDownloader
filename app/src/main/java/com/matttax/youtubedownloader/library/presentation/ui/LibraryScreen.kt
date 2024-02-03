@@ -18,14 +18,14 @@ fun LibraryScreen(
     modifier: Modifier,
     viewModel: LibraryViewModel
 ) {
-    val isPlaying by viewModel.isPlaying.collectAsState()
+    val isMediaSelected by viewModel.isMediaItemSelected.collectAsState()
     val name by viewModel.playlistName.collectAsState()
 
     Column(
         modifier = modifier
     ) {
         AnimatedVisibility(
-            visible = !isPlaying,
+            visible = !isMediaSelected,
             enter = slideInHorizontally(
                 initialOffsetX = { -it },
                 animationSpec = tween(
@@ -57,7 +57,7 @@ fun LibraryScreen(
             viewModel = viewModel
         )
         AnimatedVisibility(
-            visible = isPlaying,
+            visible = isMediaSelected,
             enter = slideInHorizontally(
                 initialOffsetX = { -it },
                 animationSpec = tween(
@@ -83,8 +83,8 @@ fun LibraryScreen(
         }
     }
 
-    BackHandler(enabled = isPlaying || name != "All media") {
-        if (isPlaying) {
+    BackHandler(enabled = isMediaSelected || name != "All media") {
+        if (isMediaSelected) {
             viewModel.onStopPlayback()
         } else if (name != "All media") {
             viewModel.loadAllMedia()

@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.dp
 import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
 import com.matttax.youtubedownloader.core.ui.MediaItem
 import com.matttax.youtubedownloader.core.ui.Player
-import com.matttax.youtubedownloader.core.ui.UiMediaModel
 import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
+import com.matttax.youtubedownloader.core.ui.utils.UiMediaModel
 import com.matttax.youtubedownloader.youtube.presentation.LoadingError
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
 import com.matttax.youtubedownloader.youtube.presentation.states.PagingState
@@ -50,9 +50,7 @@ fun YoutubeSearchScreen(
     val isFocused by interactionSource.collectIsFocusedAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
-
-
-    LaunchedEffect(Unit) {
+    LaunchedEffect(true) {
         viewModel.errorFlow.collectLatest {
             when(it) {
                 is LoadingError.NoStreamableLinkFound -> snackbarHostState.showSnackbar(
@@ -265,4 +263,3 @@ fun YoutubeVideoMetadata.toUiModel(): UiMediaModel {
         id, thumbnailUri, name, author, durationSeconds
     )
 }
-

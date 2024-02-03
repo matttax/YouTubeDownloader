@@ -8,7 +8,6 @@ import com.matttax.youtubedownloader.library.repositories.model.Playlist
 import com.matttax.youtubedownloader.library.repositories.MediaRepository
 import com.matttax.youtubedownloader.library.repositories.PlaylistRepository
 import com.matttax.youtubedownloader.player.PlayerDelegate
-import com.matttax.youtubedownloader.youtube.presentation.states.DownloadState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
@@ -31,11 +30,14 @@ class LibraryViewModel @Inject constructor(
     private val _playlists = MutableStateFlow<List<Playlist>>(emptyList())
     val playlists = _playlists.asStateFlow()
 
-    private val _isPlaying = MutableStateFlow(false)
-    val isPlaying = _isPlaying.asStateFlow()
+    private val _isMediaItemSelected = MutableStateFlow(false)
+    val isMediaItemSelected = _isMediaItemSelected.asStateFlow()
 
     private val _playlistName = MutableStateFlow("All media")
     val playlistName = _playlistName.asStateFlow()
+
+    val currentPlayingUri = playerDelegate.getCurrentPlayingUri()
+    val isPlaying = playerDelegate.getIsPlaying()
 
     private val selectedPlaylists =
         Collections.synchronizedMap(HashMap<Int, MutableStateFlow<Boolean>>())
@@ -57,13 +59,13 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun onSetItem(itemPosition: Int) {
-        _isPlaying.value = true
+        _isMediaItemSelected.value = true
         val uris = _mediaList.value.map { it.path }
         playerDelegate.play(uris, itemPosition)
     }
 
     fun onStopPlayback() {
-        _isPlaying.value = false
+        _isMediaItemSelected.value = false
         playerDelegate.pause()
         playerDelegate.clear()
     }
@@ -123,6 +125,10 @@ class LibraryViewModel @Inject constructor(
             .launchIn(viewModelScope)
         _playlistName.value = "All media"
     }
+
+    fun onPausePlayback() = playerDelegate.pause()
+
+    fun onResumePlayback() = playerDelegate.resume()
 
     private fun getMutablePlaylistSelected(id: Int): MutableStateFlow<Boolean> {
         return selectedPlaylists[id] ?: run {

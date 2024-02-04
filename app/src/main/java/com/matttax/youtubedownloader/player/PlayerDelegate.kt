@@ -49,12 +49,13 @@ class PlayerDelegate @Inject constructor(
         _playing = format
     }
 
-    fun play(playlist: List<String>, startPosition: Int = 0) {
+    fun play(playlist: List<String>, startPosition: Int = 0, queue: List<Int>? = null) {
         playlist.forEach {
             val item = MediaItem.Builder().setUri(it).setMediaId(it).build()
             exoPlayer.addMediaItem(item)
         }
         exoPlayer.seekTo(startPosition, C.TIME_UNSET)
+        queue?.let { setQueue(it) }
         exoPlayer.play()
         _playing = Format.Video(url = playlist[startPosition])
     }

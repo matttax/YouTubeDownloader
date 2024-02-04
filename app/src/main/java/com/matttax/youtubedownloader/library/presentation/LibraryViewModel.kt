@@ -63,7 +63,7 @@ class LibraryViewModel @Inject constructor(
     fun onSetItem(itemPosition: Int) {
         _isMediaItemSelected.value = true
         val uris = _mediaList.value.map { it.path }
-        playerDelegate.play(uris, itemPosition)
+        playerDelegate.play(uris, itemPosition, queue)
     }
 
     fun onStopPlayback() {
@@ -135,8 +135,11 @@ class LibraryViewModel @Inject constructor(
                 add(to, removeAt(from))
             }
         }
-        queue?.apply { add(to, removeAt(from)) }
-            ?.also { playerDelegate.setQueue(it) }
+        queue.takeIf { _isMediaItemSelected.value }
+            ?.apply { add(to, removeAt(from)) }
+            ?.also {
+                playerDelegate.setQueue(it)
+            }
     }
 
     fun onPausePlayback() = playerDelegate.pause()

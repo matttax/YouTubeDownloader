@@ -2,7 +2,9 @@ package com.matttax.youtubedownloader.player
 
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.ShuffleOrder
 import com.matttax.youtubedownloader.core.model.Format
 import com.matttax.youtubedownloader.player.model.MediaStreamingOptions
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,6 +61,14 @@ class PlayerDelegate @Inject constructor(
 
     fun setStreamingOptions(streamingOptions: MediaStreamingOptions) {
         _streamingOptions = streamingOptions
+    }
+
+    @androidx.annotation.OptIn(UnstableApi::class)
+    fun setQueue(queue: List<Int>) {
+        exoPlayer.setShuffleOrder(
+            ShuffleOrder.DefaultShuffleOrder(queue.toIntArray(), 0)
+        )
+        exoPlayer.shuffleModeEnabled = true
     }
 
     fun release() = exoPlayer.release()

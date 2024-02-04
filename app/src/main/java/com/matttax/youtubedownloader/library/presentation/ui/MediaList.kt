@@ -5,15 +5,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import com.matttax.youtubedownloader.core.ui.*
 import com.matttax.youtubedownloader.core.ui.PlayingState
+import com.matttax.youtubedownloader.core.ui.dragndrop.DragDropColumn
 import com.matttax.youtubedownloader.core.ui.utils.UiMediaModel
 import com.matttax.youtubedownloader.library.presentation.LibraryViewModel
 import com.matttax.youtubedownloader.library.repositories.model.MediaItem
@@ -26,18 +22,10 @@ fun MediaList(
     val titleText by viewModel.playlistName.collectAsState()
     val mediaList by viewModel.mediaList.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
-    val currentPlaying by viewModel.currentPlayingUri.collectAsState()
+    val currentPlayingUri by viewModel.currentPlayingUri.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
     var showOptionsFor by remember { mutableStateOf<Int?>(null) }
     val clearFocus = remember { { if (showOptionsFor != null) showOptionsFor = null } }
-    val nestedScrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                clearFocus()
-                return Offset.Zero
-            }
-        }
-    }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showPlaylistDialog by remember { mutableStateOf(false) }
 
@@ -49,44 +37,40 @@ fun MediaList(
             }
     ) {
         Title(text = titleText)
-        LazyColumn(
-            modifier = Modifier.nestedScroll(nestedScrollConnection),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            items(mediaList.size) { index ->
-                Box(
-                    contentAlignment = Alignment.CenterEnd
-                ) {
-                    CollapsedMediaItem(
-                        videoData = mediaList[index].toUiMediaModel(),
-                        playingState = when {
-                            mediaList[index].path == currentPlaying && isPlaying -> PlayingState.PLAYING
-                            mediaList[index].path == currentPlaying && !isPlaying -> PlayingState.PAUSED
-                            else -> PlayingState.NONE
-                        },
-                        onClick = {
-                            clearFocus()
-                            if (mediaList[index].path == currentPlaying) {
-                                if (isPlaying) viewModel.onPausePlayback() else viewModel.onResumePlayback()
-                            } else viewModel.onSetItem(index)
-                        },
-                        onLongClick = {
-                            showOptionsFor = if (index == showOptionsFor)
-                                null
-                            else index
-                        },
-                    )
-                    PopUpMenu(
-                        isPopped = showOptionsFor == index,
-                        onDeleteClick = { showDeleteDialog = true },
-                        onAddToPlaylistClick = {
-                            mediaList[index].id?.let {
-                                viewModel.getMediaItemPlaylists(it)
-                            }
-                            showPlaylistDialog = true
+        DragDropColumn(
+            items = mediaList,
+            onSwap = viewModel::onItemsSwapped
+        ) { index, item ->
+            PlayableMediaItem(
+                videoData = mediaList[index].toUiMediaModel(),
+                playingState = when {
+                    item.path == currentPlayingUri && isPlaying -> PlayingState.PLAYING
+                    item.path == currentPlayingUri && !isPlaying -> PlayingState.PAUSED
+                    else -> PlayingState.NONE
+                },
+                onClick = {
+                    clearFocus()
+                    if (item.path == currentPlayingUri) {
+                        if (isPlaying) viewModel.onPausePlayback() else viewModel.onResumePlayback()
+                    } else viewModel.onSetItem(index)
+                },
+                onSwipe = {
+                    showOptionsFor = if (index == showOptionsFor)
+                        null
+                    else index
+                },
+                swipeEnabled = currentPlayingUri == null && (showOptionsFor == null || showOptionsFor == index)
+            ) {
+                PopUpMenu(
+                    isPopped = it,
+                    onDeleteClick = { showDeleteDialog = true },
+                    onAddToPlaylistClick = {
+                        mediaList[index].id?.let {
+                            viewModel.getMediaItemPlaylists(it)
                         }
-                    )
-                }
+                        showPlaylistDialog = true
+                    }
+                )
             }
         }
     }

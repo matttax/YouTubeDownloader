@@ -42,6 +42,8 @@ class LibraryViewModel @Inject constructor(
     private val selectedPlaylists =
         Collections.synchronizedMap(HashMap<Int, MutableStateFlow<Boolean>>())
 
+    private var queue: MutableList<Int>? = null
+
     init {
         loadAllMedia()
         playlistRepository.getAllPlaylists()
@@ -121,9 +123,20 @@ class LibraryViewModel @Inject constructor(
         mediaRepository.getAllMedia()
             .onEach {
                 _mediaList.value = it
+                queue = MutableList(it.size) { index -> index }
             }
             .launchIn(viewModelScope)
         _playlistName.value = "All media"
+    }
+
+    fun onItemsSwapped(from: Int, to: Int) {
+        _mediaList.update {
+            it.toMutableList().apply {
+                add(to, removeAt(from))
+            }
+        }
+        queue?.apply { add(to, removeAt(from)) }
+            ?.also { playerDelegate.setQueue(it) }
     }
 
     fun onPausePlayback() = playerDelegate.pause()

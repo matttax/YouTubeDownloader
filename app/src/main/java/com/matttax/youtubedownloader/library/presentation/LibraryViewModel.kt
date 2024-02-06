@@ -9,9 +9,8 @@ import com.matttax.youtubedownloader.library.repositories.MediaRepository
 import com.matttax.youtubedownloader.library.repositories.PlaylistRepository
 import com.matttax.youtubedownloader.player.PlayerDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import java.io.File
 import java.util.*
 import javax.inject.Inject
@@ -43,6 +42,8 @@ class LibraryViewModel @Inject constructor(
         Collections.synchronizedMap(HashMap<Int, MutableStateFlow<Boolean>>())
 
     private var queue: MutableList<Int>? = null
+    private var chosenPlaylist: Int? = null
+    private val selectionScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
         loadAllMedia()
@@ -53,6 +54,7 @@ class LibraryViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        selectionScope.cancel()
         playerDelegate.release()
     }
 
@@ -63,7 +65,7 @@ class LibraryViewModel @Inject constructor(
     fun onSetItem(itemPosition: Int) {
         _isMediaItemSelected.value = true
         val uris = _mediaList.value.map { it.path }
-        playerDelegate.play(uris, itemPosition, queue)
+        playerDelegate.play(uris, itemPosition)
     }
 
     fun onStopPlayback() {
@@ -77,6 +79,7 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun onChoosePlaylist(id: Int) {
+        chosenPlaylist = id
         mediaRepository
             .getAllFromPlaylist(id)
             .onEach {_mediaList.value = it }
@@ -90,12 +93,14 @@ class LibraryViewModel @Inject constructor(
         file.delete()
     }
 
-    fun getMediaItemPlaylists(id: Long) {
+    fun getMediaItemPlaylists(id: Long, onCompletion: () -> Unit) {
         mediaRepository
             .getMediaItemPlaylistsById(id)
             .onEach {
                 it.forEach { id -> selectedPlaylists[id] = MutableStateFlow(true) }
-            }.launchIn(viewModelScope)
+                onCompletion()
+                chosenPlaylist?.let { id -> onChoosePlaylist(id) }
+            }.launchIn(selectionScope)
     }
 
     fun onSelectPlaylist(id: Int, state: Boolean) {
@@ -111,15 +116,17 @@ class LibraryViewModel @Inject constructor(
             .filter { selectedPlaylists[it]?.value == true }
         viewModelScope.launch(Dispatchers.IO) {
             mediaRepository.addMediaItemToPlaylists(mediaId, playlistIds)
+            onDeselectPlaylists()
         }
-        onDeselectPlaylists()
     }
 
     fun onDeselectPlaylists() {
+        selectionScope.coroutineContext.cancelChildren()
         selectedPlaylists.clear()
     }
 
     fun loadAllMedia() {
+        chosenPlaylist = null
         mediaRepository.getAllMedia()
             .onEach {
                 _mediaList.value = it

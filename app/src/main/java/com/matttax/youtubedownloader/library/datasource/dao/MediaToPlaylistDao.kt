@@ -23,4 +23,7 @@ interface MediaToPlaylistDao {
 
     @Query("SELECT playlist_id FROM media_to_playlist WHERE media_id=:mediaId")
     fun getMediaPlaylistsIds(mediaId: Long): Flow<List<Int>>
+
+    @Query("DELETE FROM media_to_playlist WHERE media_id=:mediaId")
+    fun removeFromAllPlaylists(mediaId: Long)
 }

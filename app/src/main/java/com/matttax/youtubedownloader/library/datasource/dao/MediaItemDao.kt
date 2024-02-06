@@ -13,7 +13,7 @@ interface MediaItemDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertMediaItem(mediaItem: MediaItemEntity)
 
-    @Query("SELECT * FROM media_item")
+    @Query("SELECT * FROM media_item ORDER BY last_updated DESC")
     fun getAll(): Flow<List<MediaItemEntity>>
 
     @Query("SELECT * FROM media_item WHERE has_video=true")
@@ -25,7 +25,7 @@ interface MediaItemDao {
     @Query("SELECT * FROM media_item WHERE author=:authorName")
     fun getByAuthor(authorName: String): Flow<List<MediaItemEntity>>
 
-    @Query("SELECT * FROM media_item WHERE id IN (:ids)")
+    @Query("SELECT * FROM media_item WHERE id IN (:ids) ORDER BY last_updated DESC")
     fun getByIds(ids: List<Long>): Flow<List<MediaItemEntity>>
 
     @Query("DELETE FROM media_item WHERE path=:path")

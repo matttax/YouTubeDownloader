@@ -55,20 +55,19 @@ fun MediaList(
                     } else viewModel.onSetItem(index)
                 },
                 onSwipe = {
-                    showOptionsFor = if (index == showOptionsFor)
-                        null
-                    else index
+                    showOptionsFor = index
                 },
-                swipeEnabled = currentPlayingUri == null && (showOptionsFor == null || showOptionsFor == index)
+                swipeEnabled = currentPlayingUri == null && !showDeleteDialog && !showPlaylistDialog && (showOptionsFor == null || showOptionsFor == index)
             ) {
                 PopUpMenu(
                     isPopped = it,
                     onDeleteClick = { showDeleteDialog = true },
                     onAddToPlaylistClick = {
-                        mediaList[index].id?.let {
-                            viewModel.getMediaItemPlaylists(it)
+                        mediaList[index].id?.let { id ->
+                            viewModel.getMediaItemPlaylists(id) {
+                                if (showOptionsFor != null) showPlaylistDialog = true
+                            }
                         }
-                        showPlaylistDialog = true
                     }
                 )
             }
@@ -82,6 +81,7 @@ fun MediaList(
             },
             onDismiss = {
                 showDeleteDialog = false
+                showOptionsFor = null
                 clearFocus()
             }
         )
@@ -98,6 +98,7 @@ fun MediaList(
             },
             onDismiss = {
                 showPlaylistDialog = false
+                showOptionsFor = null
                 viewModel.onDeselectPlaylists()
                 clearFocus()
             }

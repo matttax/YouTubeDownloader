@@ -1,5 +1,6 @@
 package com.matttax.youtubedownloader.player
 
+import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
@@ -9,6 +10,7 @@ import com.matttax.youtubedownloader.core.model.Format
 import com.matttax.youtubedownloader.player.model.MediaStreamingOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 
 class PlayerDelegate @Inject constructor(
@@ -30,6 +32,7 @@ class PlayerDelegate @Inject constructor(
         onReady = { _isVideoReady.value = true },
         onUnready = { _isVideoReady.value = false }
     )
+    private val playlistQueue = AtomicReference<List<Int>?>(null)
 
     init {
         exoPlayer.prepare()
@@ -49,13 +52,16 @@ class PlayerDelegate @Inject constructor(
         _playing = format
     }
 
-    fun play(playlist: List<String>, startPosition: Int = 0, queue: List<Int>? = null) {
+    @OptIn(UnstableApi::class)
+    @Synchronized
+    fun play(playlist: List<String>, startPosition: Int = 0) {
+        exoPlayer.clearMediaItems()
+        exoPlayer.shuffleModeEnabled = false
         playlist.forEach {
             val item = MediaItem.Builder().setUri(it).setMediaId(it).build()
             exoPlayer.addMediaItem(item)
         }
         exoPlayer.seekTo(startPosition, C.TIME_UNSET)
-        queue?.let { setQueue(it) }
         exoPlayer.play()
         _playing = Format.Video(url = playlist[startPosition])
     }
@@ -66,6 +72,7 @@ class PlayerDelegate @Inject constructor(
 
     @androidx.annotation.OptIn(UnstableApi::class)
     fun setQueue(queue: List<Int>) {
+        playlistQueue.set(queue)
         exoPlayer.setShuffleOrder(
             ShuffleOrder.DefaultShuffleOrder(queue.toIntArray(), 0)
         )

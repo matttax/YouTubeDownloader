@@ -82,15 +82,18 @@ class LibraryViewModel @Inject constructor(
         chosenPlaylist = id
         mediaRepository
             .getAllFromPlaylist(id)
-            .onEach {_mediaList.value = it }
-            .launchIn(viewModelScope)
+            .onEach {
+                _mediaList.value = it
+            }.launchIn(viewModelScope)
         _playlistName.value = _playlists.value.first { it.id == id }.name
     }
 
-    fun onDeleteItem(path: String) = viewModelScope.launch(Dispatchers.IO) {
-        mediaRepository.deleteByPath(path)
-        val file = File(path)
+    fun onDeleteItem(mediaItem: MediaItem) = viewModelScope.launch(Dispatchers.IO) {
+        mediaRepository.deleteByPath(mediaItem.path)
+        val file = File(mediaItem.path)
+        val thumbnail = File(mediaItem.thumbnailUri)
         file.delete()
+        thumbnail.delete()
     }
 
     fun getMediaItemPlaylists(id: Long, onCompletion: () -> Unit) {
@@ -116,7 +119,7 @@ class LibraryViewModel @Inject constructor(
             .filter { selectedPlaylists[it]?.value == true }
         viewModelScope.launch(Dispatchers.IO) {
             mediaRepository.addMediaItemToPlaylists(mediaId, playlistIds)
-            onDeselectPlaylists()
+            chosenPlaylist?.let { onChoosePlaylist(it) }
         }
     }
 

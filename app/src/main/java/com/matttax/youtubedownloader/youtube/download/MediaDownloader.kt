@@ -1,19 +1,20 @@
-package com.matttax.youtubedownloader.youtube
+package com.matttax.youtubedownloader.youtube.download
 
 import android.app.DownloadManager
 import android.content.Context
 import android.os.Environment
 import androidx.core.net.toUri
+import com.google.gson.Gson
 import com.matttax.youtubedownloader.core.model.Format
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import java.io.File
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.collections.HashMap
 
 @Singleton
 class MediaDownloader @Inject constructor(
@@ -26,21 +27,23 @@ class MediaDownloader @Inject constructor(
     private val downloadedThumbnailPaths = Collections.synchronizedMap(HashMap<String, String>())
 
     private val regex = Regex("[^A-Za-z0-9 ]")
+    private val gson = Gson()
+    private val currentDownloading = context.getSharedPreferences("Downloading", Context.MODE_PRIVATE)
 
     fun download(format: Format, title: String, thumbnailUri: String? = null): Flow<Float> {
-        val directory = Environment.DIRECTORY_DOWNLOADS
         val ext = extractFormatFromMimeType(format.mimeType) ?: ""
-        val subPath =
-            "${regex.replace(format.url.takeLast(25), "")}$ext"
-        val request = DownloadManager.Request(format.url.toUri())
-            .setTitle(title)
-            .setMimeType(format.mimeType)
-            .setNotificationVisibility(
-                DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED or DownloadManager.Request.VISIBILITY_VISIBLE
-            ).setDestinationInExternalPublicDir(directory, subPath)
+        val subPath = "${regex.replace(format.url.takeLast(25), "")}$ext"
+        val fullPath = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/$subPath"
+        val internalPath = File(context.dataDir.absolutePath, subPath).absolutePath
+        val request = buildRequest(
+            uri = format.url,
+            title =  title,
+            mimeType = format.mimeType,
+            subPath = subPath
+        ).setDescription(buildParcelJson(fullPath, internalPath))
         val downloadId = downloadManager.enqueue(request)
-        downloadedMediaPaths[format.url] =
-            "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/$subPath"
+        currentDownloading.edit().putBoolean(downloadId.toString(), false).apply()
+        downloadedMediaPaths[format.url] = internalPath
         if (thumbnailUri != null) {
             downloadThumbnail(format.url, title, thumbnailUri)
         }
@@ -56,17 +59,18 @@ class MediaDownloader @Inject constructor(
     }
 
     private fun downloadThumbnail(key: String, title: String, uri: String) {
-        val subPath =
-            "${regex.replace("$title$key".takeLast(30), "")}.jpg"
-        val request = DownloadManager.Request(uri.toUri())
-            .setTitle(title)
-            .setMimeType("image/jpg")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN).setDestinationInExternalPublicDir(
-                Environment.DIRECTORY_DOWNLOADS.plus("/.youtube_thumbnails"), subPath
-            )
-        downloadManager.enqueue(request)
-        downloadedMediaPaths[key] =
-            "${Environment.DIRECTORY_DOWNLOADS}/.youtube_thumbnails/$subPath"
+        val subPath = "${regex.replace("$title$key".takeLast(30), "")}.jpg"
+        val fullPath = "${Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)}/$subPath"
+        val internalPath = File(context.dataDir.absolutePath, subPath).absolutePath
+        val request = buildRequest(
+            uri = uri,
+            title = title,
+            mimeType = "image/jpg",
+            subPath = subPath
+        ).setDescription(buildParcelJson(fullPath, internalPath))
+        val downloadId = downloadManager.enqueue(request)
+        currentDownloading.edit().putBoolean(downloadId.toString(), false).apply()
+        downloadedThumbnailPaths[key] = internalPath
     }
 
     private fun progressFlow(id: Long) = flow {
@@ -97,5 +101,26 @@ class MediaDownloader @Inject constructor(
             return ".mp3"
         }
         return null
+    }
+
+    private fun buildRequest(
+        uri: String, title: String, mimeType: String, subPath: String
+    ): DownloadManager.Request {
+        val visibility = DownloadManager.Request.VISIBILITY_HIDDEN
+        return DownloadManager.Request(uri.toUri())
+            .setTitle(title)
+            .setMimeType(mimeType)
+            .setNotificationVisibility(visibility)
+            .setDestinationInExternalPublicDir(
+                Environment.DIRECTORY_DOWNLOADS, subPath
+            )
+    }
+
+    private fun buildParcelJson(externalPath: String, internalPath: String): String {
+        val parcel = StorageParcel(
+            externalPath = externalPath,
+            internalPath = internalPath
+        )
+        return gson.toJson(parcel)
     }
 }

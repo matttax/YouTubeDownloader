@@ -57,7 +57,8 @@ fun MediaList(
                 onSwipe = {
                     showOptionsFor = index
                 },
-                swipeEnabled = currentPlayingUri == null && !showDeleteDialog && !showPlaylistDialog && (showOptionsFor == null || showOptionsFor == index)
+                swipeEnabled = currentPlayingUri == null && !showDeleteDialog && !showPlaylistDialog
+                        && (showOptionsFor == null || showOptionsFor == index)
             ) {
                 PopUpMenu(
                     isPopped = it,
@@ -77,7 +78,7 @@ fun MediaList(
         YesNoDialog(
             text = "Are you ready to delete this item?",
             onYes = {
-                showOptionsFor?.let { viewModel.onDeleteItem(mediaList[it].path) }
+                showOptionsFor?.let { viewModel.onDeleteItem(mediaList[it]) }
             },
             onDismiss = {
                 showDeleteDialog = false

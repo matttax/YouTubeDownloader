@@ -45,7 +45,6 @@ fun PlayableMediaItem(
         targetValue = 45f,
         animationSpec = infiniteRepeatable(tween(1000), RepeatMode.Reverse)
     )
-    var offset by rememberSaveable { mutableStateOf(0f) }
     var menuShown by rememberSaveable { mutableStateOf(false) }
 
     val pxToMove = with(LocalDensity.current) {
@@ -58,10 +57,8 @@ fun PlayableMediaItem(
             IntOffset.Zero
         }
     )
-
     if (!swipeEnabled) {
         menuShown = false
-        offset = 0f
     }
 
     Box(
@@ -73,7 +70,6 @@ fun PlayableMediaItem(
                 .padding(5.dp)
                 .clickable {
                     menuShown = false
-                    offset = 0f
                     onClick(videoData.id)
                 }
                 .pointerInput(Unit) {
@@ -83,10 +79,8 @@ fun PlayableMediaItem(
                         }
                         if (dragAmount.dp.value > 10 && menuShown) {
                             menuShown = false
-//                            offset = 0f
                         } else if (dragAmount.dp.value < -30) {
                             menuShown = true
-//                            offset = -100f
                             onSwipe(videoData.id)
                         }
                     }

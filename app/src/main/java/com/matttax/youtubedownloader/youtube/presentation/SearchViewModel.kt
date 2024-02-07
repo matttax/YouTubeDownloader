@@ -14,7 +14,7 @@ import com.matttax.youtubedownloader.player.PlayerDelegate
 import com.matttax.youtubedownloader.settings.SettingsManager
 import com.matttax.youtubedownloader.settings.model.PlayerSettings
 import com.matttax.youtubedownloader.settings.model.SearchSettings
-import com.matttax.youtubedownloader.youtube.MediaDownloader
+import com.matttax.youtubedownloader.youtube.download.MediaDownloader
 import com.matttax.youtubedownloader.youtube.presentation.mappers.getStreamingOptions
 import com.matttax.youtubedownloader.youtube.presentation.states.DownloadState
 import com.matttax.youtubedownloader.youtube.presentation.states.PagingState
@@ -155,18 +155,21 @@ class SearchViewModel @Inject constructor(
         val currentMetadata = _currentStreamable.value?.metadata ?: return
         playerDelegate.playing?.let { format ->
             getMutableDownloadState(currentMetadata.id).update { state -> state.copy(isDownloading = true) }
-            mediaDownloader.download(format, currentStreamable.value?.metadata?.name ?: "untitled")
-                .onEach { getMutableDownloadState(currentMetadata.id).update { state -> state.copy(progress = it) } }
-                .onCompletion {
-                    getMutableDownloadState(currentMetadata.id).update { state ->
-                        state.copy(
-                            isDownloading = false,
-                            isCompleted = true
-                        )
-                    }
-                    addToRepo(currentMetadata, format)
+            mediaDownloader.download(
+                format = format,
+                title = currentStreamable.value?.metadata?.name ?: "untitled",
+                thumbnailUri = currentMetadata.thumbnailUri
+            ).onEach {
+                getMutableDownloadState(currentMetadata.id).update { state -> state.copy(progress = it) }
+            }.onCompletion {
+                getMutableDownloadState(currentMetadata.id).update { state ->
+                    state.copy(
+                        isDownloading = false,
+                        isCompleted = true
+                    )
                 }
-                .launchIn(viewModelScope)
+                addToRepo(currentMetadata, format)
+            }.launchIn(viewModelScope)
         } ?: noStreamableCrash()
     }
 

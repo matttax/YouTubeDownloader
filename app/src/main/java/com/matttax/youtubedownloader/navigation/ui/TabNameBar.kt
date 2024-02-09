@@ -15,21 +15,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavBackStackEntry
 import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
-import com.matttax.youtubedownloader.routeToScreenName
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun TabNameBar(navBackStackEntry: NavBackStackEntry) {
+fun TabNameBar(name: String) {
     AnimatedContent(
-        targetState = navBackStackEntry,
+        targetState = name,
         transitionSpec = {
             EnterTransition.None togetherWith ExitTransition.None
         }
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -44,7 +42,7 @@ fun TabNameBar(navBackStackEntry: NavBackStackEntry) {
                         enter = scaleIn(),
                         exit = scaleOut()
                     ),
-                text = navBackStackEntry.destination.route.routeToScreenName(),
+                text = name,
                 color = Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.ExtraBold

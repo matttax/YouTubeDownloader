@@ -153,6 +153,9 @@ fun YoutubeSearchScreen(
                                                 }
                                                 Player(
                                                     exoPlayer = viewModel.getExoInstance(),
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .aspectRatio(16 / 9f),
                                                     onPause = viewModel::onPlayerHidden
                                                 )
                                                 StreamingOptions(

@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import com.matttax.youtubedownloader.core.ui.*
@@ -25,9 +26,12 @@ fun MediaList(
     val currentPlayingUri by viewModel.currentPlayingUri.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
     var showOptionsFor by remember { mutableStateOf<Int?>(null) }
-    val clearFocus = remember { { if (showOptionsFor != null) showOptionsFor = null } }
+    val clearFocus = remember {
+        { if (showOptionsFor != null) showOptionsFor = null }
+    }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showPlaylistDialog by remember { mutableStateOf(false) }
+    var mediaItemKey = rememberSaveable { 0 }
 
     Column(
         modifier = modifier
@@ -39,10 +43,14 @@ fun MediaList(
         Title(text = titleText)
         DragDropColumn(
             items = mediaList,
-            onSwap = viewModel::onItemsSwapped
+            onSwap = viewModel::onItemsSwapped,
+            key = { _, _ ->
+                mediaItemKey += 1
+                mediaItemKey
+            }
         ) { index, item ->
             PlayableMediaItem(
-                videoData = mediaList[index].toUiMediaModel(),
+                videoData = item.toUiMediaModel(),
                 playingState = when {
                     item.path == currentPlayingUri && isPlaying -> PlayingState.PLAYING
                     item.path == currentPlayingUri && !isPlaying -> PlayingState.PAUSED

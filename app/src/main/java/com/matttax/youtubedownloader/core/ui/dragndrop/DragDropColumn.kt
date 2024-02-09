@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 fun <T : Any> DragDropColumn(
     items: List<T>,
     onSwap: (Int, Int) -> Unit,
+    key: ((index: Int, item: T) -> Any)? = null,
     itemContent: @Composable LazyItemScope.(index: Int, item: T) -> Unit
 ) {
     var overscrollJob by remember { mutableStateOf<Job?>(null) }
@@ -65,7 +66,8 @@ fun <T : Any> DragDropColumn(
         state = listState,
     ) {
         itemsIndexed(
-            items = items
+            items = items,
+            key = key
         ) { index, item ->
             DraggableItem(
                 dragDropState = dragDropState,

@@ -1,21 +1,24 @@
 package com.matttax.youtubedownloader
 
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.*
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.matttax.youtubedownloader.core.ui.utils.hideSystemUi
+import com.matttax.youtubedownloader.core.ui.utils.setScreenOrientation
+import com.matttax.youtubedownloader.core.ui.utils.showSystemUi
 import com.matttax.youtubedownloader.library.presentation.ui.LibraryScreen
 import com.matttax.youtubedownloader.library.presentation.LibraryViewModel
 import com.matttax.youtubedownloader.navigation.BottomNavigationItems
@@ -33,16 +36,23 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setScreenOrientation(Configuration.ORIENTATION_PORTRAIT)
         installSplashScreen()
         val sharedPrefs = applicationContext.getSharedPreferences(BASIC_SETTINGS, Context.MODE_PRIVATE)
         val initialItem = sharedPrefs.getString(BASIC_SETTINGS_TAB_KEY, BottomNavigationItems.LIBRARY.routeName)
             ?: BottomNavigationItems.LIBRARY.routeName
         setContent {
+            showSystemUi()
             val navController = rememberNavController()
             val searchViewModel: SearchViewModel by viewModels()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
+            var fullscreen by rememberSaveable { mutableStateOf(true) }
             Column {
-                navBackStackEntry?.let { TabNameBar(it) }
+                if (fullscreen) {
+                    TabNameBar(
+                        name = navBackStackEntry?.destination?.route.routeToScreenName()
+                    )
+                }
                 NavHost(
                     navController = navController,
                     startDestination = initialItem
@@ -53,7 +63,9 @@ class MainActivity : ComponentActivity() {
                         exitTransition = NavigationAnimations.exitTransition
                     ) {
                         YoutubeSearchScreen(
-                            modifier = Modifier.fillMaxHeight(0.95f).padding(bottom = 10.dp),
+                            modifier = Modifier
+                                .fillMaxHeight(0.95f)
+                                .padding(bottom = 10.dp),
                             viewModel = searchViewModel
                         )
                     }
@@ -65,9 +77,16 @@ class MainActivity : ComponentActivity() {
                         val libraryViewModel: LibraryViewModel by viewModels()
                         searchViewModel.onQuit()
                         LibraryScreen(
-                            modifier = Modifier.fillMaxHeight(0.95f).padding(bottom = 10.dp),
+                            modifier = Modifier
+                                .fillMaxHeight(if (fullscreen) 0.95f else 1f)
+                                .padding(bottom = if (fullscreen) 10.dp else 0.dp),
                             viewModel = libraryViewModel
-                        )
+                        ) { isFullscreen ->
+                            fullscreen = !isFullscreen
+                            if (isFullscreen) {
+                                hideSystemUi()
+                            } else showSystemUi()
+                        }
                     }
                     composable(
                         route = BottomNavigationItems.SETTINGS.routeName,
@@ -82,10 +101,12 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
-                BottomNavigationBar(
-                    navController,
-                    ROUTES_MAP[initialItem] ?: BottomNavigationItems.LIBRARY
-                )
+                if (fullscreen) {
+                    BottomNavigationBar(
+                        navController,
+                        ROUTES_MAP[initialItem] ?: BottomNavigationItems.LIBRARY
+                    )
+                }
             }
             LaunchedEffect(navBackStackEntry) {
                 sharedPrefs.edit()
@@ -98,10 +119,9 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        val ROUTES_MAP = BottomNavigationItems.values().associateBy { it.routeName }
         const val BASIC_SETTINGS = "basics"
         const val BASIC_SETTINGS_TAB_KEY = "route"
-
-        val ROUTES_MAP = BottomNavigationItems.values().associateBy { it.routeName }
     }
 }
 

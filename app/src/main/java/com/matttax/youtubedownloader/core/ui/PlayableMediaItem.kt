@@ -21,15 +21,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
-import com.bumptech.glide.integration.compose.GlideImage
+import coil.compose.AsyncImage
 import com.matttax.youtubedownloader.R
 import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
 import com.matttax.youtubedownloader.core.ui.utils.UiMediaModel
 import com.matttax.youtubedownloader.core.ui.utils.secondsToDuration
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalGlideComposeApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun PlayableMediaItem(
     videoData: UiMediaModel,
@@ -85,12 +83,13 @@ fun PlayableMediaItem(
                         }
                     }
                 }
-                .offset { offsetAnimation },
+                .offset { offsetAnimation }
+            ,
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(contentAlignment = Alignment.Center) {
-                GlideImage(
+                AsyncImage(
                     modifier = Modifier
                         .size(80.dp)
                         .aspectRatio(15 / 8f)

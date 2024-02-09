@@ -1,24 +1,27 @@
 package com.matttax.youtubedownloader.core.ui
 
+import android.widget.FrameLayout
 import androidx.annotation.OptIn
-import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.matttax.youtubedownloader.R
 
 @OptIn(UnstableApi::class)
 @Composable
 fun Player(
     exoPlayer: ExoPlayer,
-    onPause: () -> Unit = { },
     modifier: Modifier = Modifier,
-    showNavigationButtons: Boolean = false
+    showNavigationButtons: Boolean = false,
+    onPause: () -> Unit = { },
+    onFullscreen: (() -> Unit)? = null
 ) {
     var lifecycle by remember { mutableStateOf(Lifecycle.Event.ON_CREATE) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -33,14 +36,19 @@ fun Player(
         }
     }
     AndroidView(
-        modifier = modifier
-            .fillMaxWidth()
-            .aspectRatio(16 / 9f),
+        modifier = modifier,
         factory = { context ->
             PlayerView(context).apply {
                 player = exoPlayer
                 setShowNextButton(showNavigationButtons)
                 setShowPreviousButton(showNavigationButtons)
+            }.also {
+                val fullscreenButton = it.findViewById<FrameLayout>(R.id.exo_fullscreen_button)
+                if (onFullscreen != null) {
+                    fullscreenButton.setOnClickListener {
+                        onFullscreen()
+                    }
+                } else fullscreenButton.isVisible = false
             }
         },
         update = {

@@ -1,19 +1,17 @@
 package com.matttax.youtubedownloader.library.presentation.ui
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.viewinterop.AndroidView
 import com.matttax.youtubedownloader.core.ui.*
-import com.matttax.youtubedownloader.core.ui.PlayingState
-import com.matttax.youtubedownloader.core.ui.dragndrop.DragDropColumn
-import com.matttax.youtubedownloader.core.ui.utils.UiMediaModel
+import com.matttax.youtubedownloader.core.ui.UiMediaModel
 import com.matttax.youtubedownloader.library.presentation.LibraryViewModel
+import com.matttax.youtubedownloader.library.presentation.ui.medialist.MediaItemCallback
+import com.matttax.youtubedownloader.library.presentation.ui.medialist.MediaListView
 import com.matttax.youtubedownloader.library.repositories.model.MediaItem
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun MediaList(
@@ -26,72 +24,65 @@ fun MediaList(
     val currentPlayingUri by viewModel.currentPlayingUri.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
     var showOptionsFor by remember { mutableStateOf<Int?>(null) }
-    val clearFocus = remember {
-        { if (showOptionsFor != null) showOptionsFor = null }
-    }
+
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showPlaylistDialog by remember { mutableStateOf(false) }
-    var mediaItemKey = rememberSaveable { 0 }
+
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = modifier
-            .clickable { }
-            .pointerInput(Unit) {
-                detectTapGestures { clearFocus() }
-            }
     ) {
         Title(text = titleText)
-        DragDropColumn(
-            items = mediaList,
-            onSwap = viewModel::onItemsSwapped,
-            key = { _, _ ->
-                mediaItemKey += 1
-                mediaItemKey
-            }
-        ) { index, item ->
-            PlayableMediaItem(
-                videoData = item.toUiMediaModel(),
-                playingState = when {
-                    item.path == currentPlayingUri && isPlaying -> PlayingState.PLAYING
-                    item.path == currentPlayingUri && !isPlaying -> PlayingState.PAUSED
-                    else -> PlayingState.NONE
-                },
-                onClick = {
-                    clearFocus()
-                    if (item.path == currentPlayingUri) {
-                        if (isPlaying) viewModel.onPausePlayback() else viewModel.onResumePlayback()
-                    } else viewModel.onSetItem(index)
-                },
-                onSwipe = {
-                    showOptionsFor = index
-                },
-                swipeEnabled = currentPlayingUri == null && !showDeleteDialog && !showPlaylistDialog
-                        && (showOptionsFor == null || showOptionsFor == index)
-            ) {
-                PopUpMenu(
-                    isPopped = it,
-                    onDeleteClick = { showDeleteDialog = true },
-                    onAddToPlaylistClick = {
-                        mediaList[index].id?.let { id ->
-                            viewModel.getMediaItemPlaylists(id) {
-                                if (showOptionsFor != null) showPlaylistDialog = true
-                            }
+        AndroidView(
+            factory = { context ->
+                MediaListView(context).also {
+                    it.mediaItemCallback = object : MediaItemCallback {
+                        override fun onClick(id: String, position: Int) {
+                            if (id == currentPlayingUri) {
+                                if (isPlaying) viewModel.onPausePlayback() else viewModel.onResumePlayback()
+                            } else viewModel.onSetItem(position)
+                        }
+
+                        override fun onDeleteClick(position: Int) {
+                            showOptionsFor = position
+                            showDeleteDialog = true
+                        }
+
+                        override fun onMoveClick(position: Int) {
+                            showOptionsFor = position
+                            viewModel.getMediaItemPlaylists(mediaList[position].id)
+                            showPlaylistDialog = true
                         }
                     }
-                )
+                    it.onDragged = { from, to ->
+                        viewModel.onItemsShifted(from, to)
+                    }
+                    it.init(
+                        listFlow = viewModel.mediaList
+                            .map { list ->
+                                list.map { item -> item.toUiMediaModel() }
+                            },
+                        eventFlow = viewModel.listEventFlow,
+                        currentUriFlow = viewModel.currentPlayingUri,
+                        isPlayingFlow = viewModel.isPlaying,
+                        scope = scope
+                    )
+                }
             }
-        }
+        )
     }
     if (showDeleteDialog) {
         YesNoDialog(
             text = "Are you ready to delete this item?",
             onYes = {
-                showOptionsFor?.let { viewModel.onDeleteItem(mediaList[it]) }
+                showOptionsFor?.let {
+                    viewModel.onDeleteItem(mediaList[it])
+                }
             },
             onDismiss = {
                 showDeleteDialog = false
                 showOptionsFor = null
-                clearFocus()
             }
         )
     }
@@ -108,8 +99,7 @@ fun MediaList(
             onDismiss = {
                 showPlaylistDialog = false
                 showOptionsFor = null
-                viewModel.onDeselectPlaylists()
-                clearFocus()
+                viewModel.getMediaItemPlaylists(null)
             }
         ) {
             LazyColumn {

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="thumbnail">
+        <item name="android:layout_width">80dp</item>
+        <item name="android:layout_height">48dp</item>
+    </style>
+
+    <style name="stateIcon">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+    </style>
+
+    <style name="optionsButton" parent="stateIcon">
+        <item name="android:layout_gravity">center</item>
+        <item name="android:tint">@color/black</item>
+        <item name="android:background">@drawable/btn_ripple</item>
+    </style>
+</resources>

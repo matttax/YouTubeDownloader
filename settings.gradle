@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "YouTube Downloader"
 include ':app'
+include ':swipe-reveal-layout'

@@ -3,6 +3,8 @@ package com.matttax.youtubedownloader.library.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.exoplayer.ExoPlayer
+import com.matttax.youtubedownloader.library.presentation.diff.DiffCounter
+import com.matttax.youtubedownloader.library.presentation.diff.ListDiff
 import com.matttax.youtubedownloader.library.repositories.model.MediaItem
 import com.matttax.youtubedownloader.library.repositories.model.Playlist
 import com.matttax.youtubedownloader.library.repositories.MediaRepository
@@ -10,6 +12,7 @@ import com.matttax.youtubedownloader.library.repositories.PlaylistRepository
 import com.matttax.youtubedownloader.player.PlayerDelegate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import java.io.File
 import java.util.*
@@ -23,17 +26,21 @@ class LibraryViewModel @Inject constructor(
     private val playerDelegate: PlayerDelegate,
 ) : ViewModel() {
 
+    val playlists = playlistRepository.getAllPlaylists()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val _playlistName = MutableStateFlow("All media")
+    val playlistName = _playlistName.asStateFlow()
+
     private val _mediaList = MutableStateFlow<List<MediaItem>>(emptyList())
     val mediaList = _mediaList.asStateFlow()
-
-    private val _playlists = MutableStateFlow<List<Playlist>>(emptyList())
-    val playlists = _playlists.asStateFlow()
 
     private val _isMediaItemSelected = MutableStateFlow(false)
     val isMediaItemSelected = _isMediaItemSelected.asStateFlow()
 
-    private val _playlistName = MutableStateFlow("All media")
-    val playlistName = _playlistName.asStateFlow()
+    private val listEventChannel = Channel<ListDiff>()
+    val listEventFlow = listEventChannel.receiveAsFlow()
+        .onStart { emit(ListDiff.SignificantDifference) }
 
     val currentPlayingUri = playerDelegate.getCurrentPlayingUri()
     val isPlaying = playerDelegate.getIsPlaying()
@@ -42,19 +49,20 @@ class LibraryViewModel @Inject constructor(
         Collections.synchronizedMap(HashMap<Int, MutableStateFlow<Boolean>>())
 
     private var queue: MutableList<Int>? = null
-    private var chosenPlaylist: Int? = null
-    private val selectionScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    private val selectedPlaylist = MutableStateFlow<Int?>(null)
+    private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1)
+    private val movableMediaItemId = MutableStateFlow<Long?>(null)
 
     init {
-        loadAllMedia()
-        playlistRepository.getAllPlaylists()
-            .onEach { _playlists.value = it }
-            .launchIn(viewModelScope)
+        observeMedia()
+        observePlaylistName()
+        observeMediaItemPlaylists()
+        refreshTrigger.tryEmit(Unit)
     }
 
     override fun onCleared() {
         super.onCleared()
-        selectionScope.cancel()
         playerDelegate.release()
     }
 
@@ -64,8 +72,8 @@ class LibraryViewModel @Inject constructor(
 
     fun onSetItem(itemPosition: Int) {
         _isMediaItemSelected.value = true
-        val uris = _mediaList.value.map { it.path }
-        playerDelegate.play(uris, itemPosition)
+        val mediaUris = _mediaList.value.map { it.path }
+        playerDelegate.play(mediaUris, itemPosition)
     }
 
     fun onStopPlayback() {
@@ -74,18 +82,14 @@ class LibraryViewModel @Inject constructor(
         playerDelegate.clear()
     }
 
-    fun onAddPlaylist(name: String) = viewModelScope.launch(Dispatchers.IO) {
-        playlistRepository.addPlaylist(name)
+    fun onAddPlaylist(name: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            playlistRepository.addPlaylist(name)
+        }
     }
 
-    fun onChoosePlaylist(id: Int) {
-        chosenPlaylist = id
-        mediaRepository
-            .getAllFromPlaylist(id)
-            .onEach {
-                _mediaList.value = it
-            }.launchIn(viewModelScope)
-        _playlistName.value = _playlists.value.first { it.id == id }.name
+    fun onChoosePlaylist(id: Int?) {
+        selectedPlaylist.value = id
     }
 
     fun onDeleteItem(mediaItem: MediaItem) = viewModelScope.launch(Dispatchers.IO) {
@@ -96,14 +100,8 @@ class LibraryViewModel @Inject constructor(
         thumbnail.delete()
     }
 
-    fun getMediaItemPlaylists(id: Long, onCompletion: () -> Unit) {
-        mediaRepository
-            .getMediaItemPlaylistsById(id)
-            .onEach {
-                it.forEach { id -> selectedPlaylists[id] = MutableStateFlow(true) }
-                onCompletion()
-                chosenPlaylist?.let { id -> onChoosePlaylist(id) }
-            }.launchIn(selectionScope)
+    fun getMediaItemPlaylists(id: Long?) {
+        movableMediaItemId.value = id
     }
 
     fun onSelectPlaylist(id: Int, state: Boolean) {
@@ -119,37 +117,16 @@ class LibraryViewModel @Inject constructor(
             .filter { selectedPlaylists[it]?.value == true }
         viewModelScope.launch(Dispatchers.IO) {
             mediaRepository.addMediaItemToPlaylists(mediaId, playlistIds)
-            chosenPlaylist?.let { onChoosePlaylist(it) }
+            refreshTrigger.emit(Unit)
         }
     }
 
-    fun onDeselectPlaylists() {
-        selectionScope.coroutineContext.cancelChildren()
-        selectedPlaylists.clear()
-    }
-
-    fun loadAllMedia() {
-        chosenPlaylist = null
-        mediaRepository.getAllMedia()
-            .onEach {
-                _mediaList.value = it
-                queue = MutableList(it.size) { index -> index }
-            }
-            .launchIn(viewModelScope)
-        _playlistName.value = "All media"
-    }
-
-    fun onItemsSwapped(from: Int, to: Int) {
-        _mediaList.update {
-            it.toMutableList().apply {
-                add(to, removeAt(from))
-            }
-        }
+    fun onItemsShifted(from: Int, to: Int) {
+        updateMediaList { shift(from, to) }
+        viewModelScope.launch { listEventChannel.send(ListDiff.NoDifference) }
         queue.takeIf { _isMediaItemSelected.value }
-            ?.apply { add(to, removeAt(from)) }
-            ?.also {
-                playerDelegate.setQueue(it)
-            }
+            ?.apply { shift(from, to) }
+            ?.also { playerDelegate.setQueue(it) }
     }
 
     fun onPausePlayback() = playerDelegate.pause()
@@ -161,6 +138,89 @@ class LibraryViewModel @Inject constructor(
             val newFlow = MutableStateFlow(false)
             selectedPlaylists[id] = newFlow
             newFlow
+        }
+    }
+
+    private fun updateMediaList(operation: MutableList<MediaItem>.() -> Unit) {
+        _mediaList.update {
+            it.toMutableList().apply { operation() }
+        }
+    }
+
+    private suspend fun handleListChange(newList: List<MediaItem>) {
+        val listDiff = DiffCounter(
+            _mediaList.value, newList
+        ) { item -> item.id ?: 0 }.countListDiff()
+        when (listDiff) {
+            is ListDiff.ItemInserted -> updateMediaList { add(0, newList.first()) }
+            is ListDiff.ItemDeleted -> updateMediaList { removeAt(listDiff.position) }
+            is ListDiff.SignificantDifference -> { _mediaList.value = newList }
+            is ListDiff.NoDifference -> {}
+        }
+        listEventChannel.send(listDiff)
+        queue = newList.indices.toMutableList()
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeMedia() {
+        selectedPlaylist
+            .combine(refreshTrigger) { playlist, _ ->
+                playlist
+            }
+            .flatMapLatest {
+                when(it) {
+                    null -> mediaRepository.getAllMedia()
+                    else -> mediaRepository.getAllFromPlaylist(it)
+                }
+            }.onEach {
+                handleListChange(it)
+            }.launchIn(viewModelScope)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observePlaylistName() {
+        selectedPlaylist
+            .flatMapLatest {
+                if (it == null) {
+                    flow<Playlist?> { emit(null) }
+                } else {
+                    playlistRepository.getPlaylistById(it)
+                }
+            }.onEach {
+                _playlistName.value = it?.name ?: "All media"
+            }.launchIn(viewModelScope)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeMediaItemPlaylists() {
+        movableMediaItemId
+            .flatMapLatest {
+                when(it) {
+                    null -> flow<List<Int>?> { emit(null) }
+                    else -> mediaRepository.getMediaItemPlaylistsById(it)
+                }
+            }.onEach {
+                it?.forEach { id ->
+                    if (selectedPlaylists.keys.contains(id)) {
+                        selectedPlaylists[id]?.value = true
+                    } else {
+                        selectedPlaylists[id] = MutableStateFlow(true)
+                    }
+                } ?: run {
+                    selectedPlaylists.clear()
+                }
+            }.launchIn(viewModelScope)
+    }
+}
+
+fun <T> MutableList<T>.shift(from: Int, to: Int) {
+    if (from < to) {
+        for (i in from until to) {
+            add(i, removeAt(i + 1))
+        }
+    } else {
+        for (i in from downTo to + 1) {
+            add(i, removeAt(i - 1))
         }
     }
 }

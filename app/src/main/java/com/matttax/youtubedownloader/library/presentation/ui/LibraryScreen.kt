@@ -123,7 +123,7 @@ fun LibraryScreen(
         } else if (isMediaSelected) {
             viewModel.onStopPlayback()
         } else if (name != "All media") {
-            viewModel.loadAllMedia()
+            viewModel.onChoosePlaylist(null)
         }
     }
 }

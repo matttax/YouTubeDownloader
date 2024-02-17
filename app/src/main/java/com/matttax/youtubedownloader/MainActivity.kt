@@ -45,6 +45,8 @@ class MainActivity : ComponentActivity() {
             showSystemUi()
             val navController = rememberNavController()
             val searchViewModel: SearchViewModel by viewModels()
+            val settingsViewModel: SettingsViewModel by viewModels()
+            val libraryViewModel: LibraryViewModel by viewModels()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             var fullscreen by rememberSaveable { mutableStateOf(true) }
             Column {
@@ -74,7 +76,6 @@ class MainActivity : ComponentActivity() {
                         enterTransition = NavigationAnimations.enterTransition,
                         exitTransition = NavigationAnimations.exitTransition
                     ) {
-                        val libraryViewModel: LibraryViewModel by viewModels()
                         searchViewModel.onQuit()
                         LibraryScreen(
                             modifier = Modifier
@@ -93,7 +94,6 @@ class MainActivity : ComponentActivity() {
                         enterTransition = NavigationAnimations.enterTransition,
                         exitTransition = NavigationAnimations.exitTransition
                     ) {
-                        val settingsViewModel: SettingsViewModel by viewModels()
                         searchViewModel.onQuit()
                         SettingsScreen(
                             modifier = Modifier.fillMaxHeight(0.95f),
@@ -113,7 +113,7 @@ class MainActivity : ComponentActivity() {
                     .putString(
                         BASIC_SETTINGS_TAB_KEY,
                         navBackStackEntry?.destination?.route ?: BottomNavigationItems.LIBRARY.routeName
-                    ).apply()
+                    ).commit()
             }
         }
     }

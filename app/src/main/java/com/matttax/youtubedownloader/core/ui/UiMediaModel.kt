@@ -1,4 +1,4 @@
-package com.matttax.youtubedownloader.core.ui.utils
+package com.matttax.youtubedownloader.core.ui
 
 import androidx.compose.runtime.Immutable
 

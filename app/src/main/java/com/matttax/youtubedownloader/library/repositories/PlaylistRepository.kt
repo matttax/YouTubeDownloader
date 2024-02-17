@@ -17,6 +17,10 @@ class PlaylistRepository @Inject constructor(
         return playlistDao.getAll().map { it.map { entity -> entity.toPlaylist() } }
     }
 
+    fun getPlaylistById(id: Int): Flow<Playlist> {
+        return playlistDao.getPlaylistById(id).map { entity -> entity.toPlaylist() }
+    }
+
     fun addPlaylist(name: String) {
         playlistDao.insertPlaylist(
             PlaylistEntity(name = name)

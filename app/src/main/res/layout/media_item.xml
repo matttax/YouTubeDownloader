@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.matttax.swipereveal.SwipeRevealLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:mode="same_level"
+    app:dragEdge="right"
+    android:id="@+id/swipeRevealLayout"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        >
+        <ImageButton
+            style="@style/optionsButton"
+            android:id="@+id/editButton"
+            android:layout_marginStart="7dp"
+            android:src="@drawable/ic_edit"
+            />
+        <ImageButton
+            style="@style/optionsButton"
+            android:id="@+id/moveButton"
+            android:src="@drawable/ic_playlist_add"
+            />
+        <ImageButton
+            style="@style/optionsButton"
+            android:id="@+id/deleteButton"
+            android:layout_marginEnd="7dp"
+            android:tint="@color/youtube_red"
+            android:src="@drawable/ic_delete"
+            />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/mediaItem"
+        >
+
+        <ImageView
+            style="@style/thumbnail"
+            android:id="@+id/thumbnail"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentBottom="true"
+            android:src="@drawable/ic_youtube" />
+
+        <ImageView
+            style="@style/stateIcon"
+            android:id="@+id/playing"
+            android:layout_alignTop="@id/thumbnail"
+            android:layout_alignBottom="@id/thumbnail"
+            android:layout_alignStart="@id/thumbnail"
+            android:layout_alignEnd="@id/thumbnail"
+            android:src="@drawable/ic_play_arrow"
+            android:visibility="gone"
+            android:tint="@color/youtube_red" />
+
+        <ImageView
+            style="@style/stateIcon"
+            android:id="@+id/paused"
+            android:layout_alignTop="@id/thumbnail"
+            android:layout_alignBottom="@id/thumbnail"
+            android:layout_alignStart="@id/thumbnail"
+            android:layout_alignEnd="@id/thumbnail"
+            android:src="@drawable/ic_pause"
+            android:visibility="gone"
+            android:tint="@color/youtube_red" />
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@id/thumbnail"
+            android:layout_toStartOf="@id/duration"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:paddingHorizontal="10dp"
+            android:text="Untitled"
+            android:textColor="@color/black"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/author"
+            android:layout_toEndOf="@id/thumbnail"
+            android:layout_toStartOf="@id/duration"
+            android:layout_below="@id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="10dp"
+            android:textSize="12sp"
+            android:text="Unknown"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/duration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerInParent="true"
+            android:layout_marginEnd="10dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="00:00" />
+    </RelativeLayout>
+
+</com.matttax.swipereveal.SwipeRevealLayout>

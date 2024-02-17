@@ -114,7 +114,6 @@ class SearchViewModel @Inject constructor(
     }
 
     fun onNextPage() {
-        println("next")
         searchSettings = settingsManager.getSearchSettings()
         viewModelScope.launch {
             _loadingPageState.value = PagingState.LOADING

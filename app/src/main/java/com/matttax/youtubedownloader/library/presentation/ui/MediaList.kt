@@ -40,7 +40,9 @@ fun MediaList(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Option(resId = R.drawable.ic_shuffle)
+            Option(resId = R.drawable.ic_shuffle) {
+                viewModel.onPlayShuffled()
+            }
             Title(text = titleText)
             Spacer(Modifier.weight(1f))
             if (titleText != "All media") {

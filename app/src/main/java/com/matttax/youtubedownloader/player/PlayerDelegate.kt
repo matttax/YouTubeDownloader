@@ -1,16 +1,12 @@
 package com.matttax.youtubedownloader.player
 
-import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.source.ShuffleOrder
 import com.matttax.youtubedownloader.core.model.Format
 import com.matttax.youtubedownloader.player.model.MediaStreamingOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 
 class PlayerDelegate @Inject constructor(
@@ -32,7 +28,7 @@ class PlayerDelegate @Inject constructor(
         onReady = { _isVideoReady.value = true },
         onUnready = { _isVideoReady.value = false }
     )
-    private val playlistQueue = AtomicReference<List<Int>?>(null)
+    private val queueManager = QueueManager(exoPlayer)
 
     init {
         exoPlayer.prepare()
@@ -40,6 +36,7 @@ class PlayerDelegate @Inject constructor(
         exoPlayer.addListener(mediaItemListener)
     }
 
+    @Synchronized
     fun play(format: Format, savePosition: Boolean = false) {
         val currentPos = exoPlayer.currentPosition
         exoPlayer.apply {
@@ -52,31 +49,34 @@ class PlayerDelegate @Inject constructor(
         _playing = format
     }
 
-    @OptIn(UnstableApi::class)
     @Synchronized
-    fun play(playlist: List<String>, startPosition: Int = 0) {
+    fun play(playlist: List<String>, startPosition: Int = 0, shuffled: Boolean = false) {
         exoPlayer.clearMediaItems()
         exoPlayer.shuffleModeEnabled = false
         playlist.forEach {
             val item = MediaItem.Builder().setUri(it).setMediaId(it).build()
             exoPlayer.addMediaItem(item)
         }
-        exoPlayer.seekTo(startPosition, C.TIME_UNSET)
+        queueManager.initQueue(playlist.size, shuffled)
+        if (shuffled) {
+            exoPlayer.seekTo(
+                queueManager.queue?.first() ?: startPosition, C.TIME_UNSET
+            )
+        }
         exoPlayer.play()
         _playing = Format.Video(url = playlist[startPosition])
+    }
+
+    fun getQueue(): List<Int>? {
+        return queueManager.queue
     }
 
     fun setStreamingOptions(streamingOptions: MediaStreamingOptions) {
         _streamingOptions = streamingOptions
     }
 
-    @androidx.annotation.OptIn(UnstableApi::class)
-    fun setQueue(queue: List<Int>) {
-        playlistQueue.set(queue)
-        exoPlayer.setShuffleOrder(
-            ShuffleOrder.DefaultShuffleOrder(queue.toIntArray(), 0)
-        )
-        exoPlayer.shuffleModeEnabled = true
+    fun shiftItemInQueue(from: Int, to: Int) {
+        queueManager.onItemMoved(from, to)
     }
 
     fun release() = exoPlayer.release()

@@ -48,11 +48,9 @@ class LibraryViewModel @Inject constructor(
     private val selectedPlaylists =
         Collections.synchronizedMap(HashMap<Int, MutableStateFlow<Boolean>>())
 
-    private var queue: MutableList<Int>? = null
-
+    private val movableMediaItemId = MutableStateFlow<Long?>(null)
     private val selectedPlaylist = MutableStateFlow<Int?>(null)
     private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1)
-    private val movableMediaItemId = MutableStateFlow<Long?>(null)
 
     init {
         observeMedia()
@@ -74,6 +72,17 @@ class LibraryViewModel @Inject constructor(
         _isMediaItemSelected.value = true
         val mediaUris = _mediaList.value.map { it.path }
         playerDelegate.play(mediaUris, itemPosition)
+    }
+
+    fun onPlayShuffled() {
+        _isMediaItemSelected.value = true
+        val mediaUris = _mediaList.value.map { it.path }
+        playerDelegate.play(
+            playlist = mediaUris,
+            startPosition = 0,
+            shuffled = true
+        )
+        playerDelegate.getQueue()?.let { forceOrderItems(it) }
     }
 
     fun onStopPlayback() {
@@ -132,14 +141,20 @@ class LibraryViewModel @Inject constructor(
     fun onItemsShifted(from: Int, to: Int) {
         updateMediaList { shift(from, to) }
         viewModelScope.launch { listEventChannel.send(ListDiff.NoDifference) }
-        queue.takeIf { _isMediaItemSelected.value }
-            ?.apply { shift(from, to) }
-            ?.also { playerDelegate.setQueue(it) }
+        playerDelegate.shiftItemInQueue(from, to)
     }
 
     fun onPausePlayback() = playerDelegate.pause()
 
     fun onResumePlayback() = playerDelegate.resume()
+
+
+    private fun forceOrderItems(newOrder: List<Int>) {
+        val oldList = _mediaList.value
+        val newList = newOrder.associateBy { oldList[it] }.keys.toList()
+        _mediaList.value = newList
+        refreshTrigger.tryEmit(Unit)
+    }
 
     private fun getMutablePlaylistSelected(id: Int): MutableStateFlow<Boolean> {
         return selectedPlaylists[id] ?: run {
@@ -175,7 +190,6 @@ class LibraryViewModel @Inject constructor(
                 is ListDiff.NoDifference -> {}
             }
             listEventChannel.send(listDiff)
-            queue = newList.indices.toMutableList()
         }
     }
 

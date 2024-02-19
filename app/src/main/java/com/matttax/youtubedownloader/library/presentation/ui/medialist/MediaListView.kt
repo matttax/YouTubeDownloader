@@ -51,7 +51,9 @@ class MediaListView @JvmOverloads constructor(
         listFlow: Flow<List<UiMediaModel>>,
         eventFlow: Flow<ListDiff>
     ) {
-        listFlow.combine(eventFlow) { list, event ->
+        listFlow.combine(
+            eventFlow.filterNot { it == ListDiff.NoDifference }
+        ) { list, event ->
             if (recyclerView == null || adapter?.getCurrentItemList() == list) return@combine
             if (adapter == null) {
                 recyclerView.adapter = MediaItemAdapter(list, mediaItemCallback).also {

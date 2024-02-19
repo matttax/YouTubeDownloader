@@ -13,6 +13,8 @@ class DiffCounter<T, K : Comparable<K>>(
     private val newListUnordered = newList.sortedBy { comparator(it) }
 
     fun countListDiff(): ListDiff {
+        if (oldListUnordered == newListUnordered)
+            return ListDiff.NoDifference
         checkItemModified()?.let { return ListDiff.ItemModified(it.first, it.second) } ?:
         checkItemDeletedPosition()?.let { return ListDiff.ItemDeleted(it) } ?:
         return if (checkItemInserted()) ListDiff.ItemInserted else ListDiff.SignificantDifference

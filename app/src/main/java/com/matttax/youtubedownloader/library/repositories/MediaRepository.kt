@@ -28,6 +28,13 @@ class MediaRepository @Inject constructor(
 
     fun getMediaItemPlaylistsById(id: Long) = mediaToPlaylistDao.getMediaPlaylistsIds(id)
 
+    fun editMediaItemById(id: Long, newTitle: String, newAuthor: String) {
+        mediaItemDao.apply {
+            editTitleById(id, newTitle)
+            editAuthorById(id, newAuthor)
+        }
+    }
+
     fun addMediaItemToPlaylists(mediaId: Long, playlists: List<Int>) {
         mediaToPlaylistDao.removeFromAllPlaylists(mediaId)
         playlists.forEach {

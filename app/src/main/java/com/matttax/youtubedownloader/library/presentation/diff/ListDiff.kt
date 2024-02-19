@@ -5,5 +5,5 @@ sealed interface ListDiff {
     object ItemInserted : ListDiff
     object NoDifference : ListDiff
     data class ItemDeleted(val position: Int) : ListDiff
-    // item modified
+    data class ItemModified(val oldListPosition: Int, val newListPosition: Int) : ListDiff
 }

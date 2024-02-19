@@ -30,4 +30,10 @@ interface MediaItemDao {
 
     @Query("DELETE FROM media_item WHERE path=:path")
     fun deleteByPath(path: String)
+
+    @Query("UPDATE media_item SET title = :newTitle WHERE id = :id")
+    fun editTitleById(id: Long, newTitle: String)
+
+    @Query("UPDATE media_item SET author = :newAuthor WHERE id = :id")
+    fun editAuthorById(id: Long, newAuthor: String)
 }

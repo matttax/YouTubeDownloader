@@ -67,6 +67,7 @@ class MediaListView @JvmOverloads constructor(
             when (event) {
                 is ListDiff.ItemInserted -> adapter?.notifyItemInserted(0)
                 is ListDiff.ItemDeleted -> adapter?.notifyItemRemoved(event.position)
+                is ListDiff.ItemModified -> adapter?.notifyItemChanged(event.oldListPosition)
                 is ListDiff.SignificantDifference -> adapter?.notifyDataSetChanged()
                 is ListDiff.NoDifference -> {}
             }

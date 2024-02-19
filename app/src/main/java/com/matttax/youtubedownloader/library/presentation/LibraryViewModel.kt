@@ -100,6 +100,14 @@ class LibraryViewModel @Inject constructor(
         thumbnail.delete()
     }
 
+    fun onEditItem(position: Int, newTitle: String, newAuthor: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _mediaList.value[position].id?.let { id ->
+                mediaRepository.editMediaItemById(id, newTitle, newAuthor)
+            }
+        }
+    }
+
     fun getMediaItemPlaylists(id: Long?) {
         movableMediaItemId.value = id
     }
@@ -147,18 +155,28 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
-    private suspend fun handleListChange(newList: List<MediaItem>) {
-        val listDiff = DiffCounter(
-            _mediaList.value, newList
-        ) { item -> item.id ?: 0 }.countListDiff()
-        when (listDiff) {
-            is ListDiff.ItemInserted -> updateMediaList { add(0, newList.first()) }
-            is ListDiff.ItemDeleted -> updateMediaList { removeAt(listDiff.position) }
-            is ListDiff.SignificantDifference -> { _mediaList.value = newList }
-            is ListDiff.NoDifference -> {}
+    private fun handleListChange(newList: List<MediaItem>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val listDiff = DiffCounter(
+                _mediaList.value, newList
+            ) { item -> item.id ?: 0 }.countListDiff()
+            when (listDiff) {
+                is ListDiff.ItemInserted -> updateMediaList { add(0, newList.first()) }
+                is ListDiff.ItemDeleted -> updateMediaList { removeAt(listDiff.position) }
+                is ListDiff.ItemModified -> updateMediaList {
+                    set(
+                        listDiff.oldListPosition,
+                        newList[listDiff.newListPosition]
+                    )
+                }
+                is ListDiff.SignificantDifference -> {
+                    _mediaList.value = newList
+                }
+                is ListDiff.NoDifference -> {}
+            }
+            listEventChannel.send(listDiff)
+            queue = newList.indices.toMutableList()
         }
-        listEventChannel.send(listDiff)
-        queue = newList.indices.toMutableList()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

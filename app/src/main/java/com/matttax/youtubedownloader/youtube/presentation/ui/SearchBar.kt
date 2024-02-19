@@ -32,7 +32,7 @@ fun SearchBar(
     val query by searchText.collectAsState()
     TextField(
         modifier = Modifier
-            .background(color = Color.LightGray.copy(alpha = 0.2f))
+            .background(color = Color.White)
             .fillMaxWidth()
             .padding(5.dp),
         value = query,
@@ -47,7 +47,7 @@ fun SearchBar(
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = YouTubeRed,
             focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.LightGray.copy(alpha = 0.2f),
+            unfocusedContainerColor = Color.LightGray.copy(alpha = 0.1f),
         ),
         textStyle = TextStyle.Default.copy(fontSize = 16.sp),
         interactionSource = interactionSource

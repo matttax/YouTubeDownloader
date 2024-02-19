@@ -64,10 +64,12 @@ fun MediaItem(
             )
         }
         Column(
-            modifier = Modifier.padding(
-                vertical = 3.dp,
-                horizontal = 5.dp
-            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    vertical = 3.dp,
+                    horizontal = 5.dp
+                ),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.Start
         ) {

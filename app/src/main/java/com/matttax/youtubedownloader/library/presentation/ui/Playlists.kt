@@ -2,17 +2,12 @@ package com.matttax.youtubedownloader.library.presentation.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.matttax.youtubedownloader.R
+import com.matttax.youtubedownloader.core.ui.EditTextField
 import com.matttax.youtubedownloader.core.ui.YesNoDialog
-import com.matttax.youtubedownloader.core.ui.theme.YouTubeRed
 import com.matttax.youtubedownloader.library.repositories.model.Playlist
 import kotlinx.coroutines.flow.StateFlow
 
@@ -61,26 +56,12 @@ fun Playlists(
             },
             yesText = "Create"
         ) {
-            TextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        vertical = 10.dp
-                    )
-                    .height(50.dp),
-                value = newPlaylistName,
-                onValueChange = { newPlaylistName = it },
-                placeholder = { Text(text = "Name", fontSize = 12.sp) },
-                singleLine = true,
-
-                shape = RoundedCornerShape(20),
-                colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = YouTubeRed,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.LightGray.copy(alpha = 0.2f),
-                ),
-                textStyle = TextStyle.Default.copy(fontSize = 12.sp)
-            )
+            EditTextField(
+                initialValue = newPlaylistName,
+                hint = "Name"
+            ) {
+                newPlaylistName = it
+            }
         }
     }
 }

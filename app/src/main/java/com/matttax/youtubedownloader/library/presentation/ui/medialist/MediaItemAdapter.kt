@@ -96,18 +96,16 @@ class MediaItemAdapter(
                 duration.text = uiMediaModel.duration.secondsToDuration()
                 swipeRevealLayout.setLockDrag(playingState != PlayingState.None)
                 mediaItem.setOnClickListener { mediaItemCallback.onClick(uiMediaModel.id, layoutPosition) }
-                editButton.setOnClickListener {
-                    binding.swipeRevealLayout.close(true)
-                    mediaItemCallback.onEditClick(layoutPosition)
-                }
-                moveButton.setOnClickListener {
-                    binding.swipeRevealLayout.close(true)
-                    mediaItemCallback.onMoveClick(layoutPosition)
-                }
-                deleteButton.setOnClickListener {
-                    binding.swipeRevealLayout.close(true)
-                    mediaItemCallback.onDeleteClick(layoutPosition)
-                }
+                editButton.setListener(mediaItemCallback::onEditClick)
+                moveButton.setListener(mediaItemCallback::onMoveClick)
+                deleteButton.setListener(mediaItemCallback::onDeleteClick)
+            }
+        }
+
+        private fun ImageButton.setListener(action: (Int) -> Unit) {
+            setOnClickListener {
+                binding.swipeRevealLayout.close(true)
+                action(layoutPosition)
             }
         }
 

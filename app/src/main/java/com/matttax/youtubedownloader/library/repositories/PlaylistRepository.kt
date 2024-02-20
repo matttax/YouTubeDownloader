@@ -11,6 +11,7 @@ import javax.inject.Inject
 class PlaylistRepository @Inject constructor(
     mediaDatabase: MediaDatabase
 ) {
+    private val mediaToPlaylistDao = mediaDatabase.getMediaToPlaylistDao()
     private val playlistDao = mediaDatabase.getPlaylistDao()
 
     fun getAllPlaylists(): Flow<List<Playlist>> {
@@ -25,5 +26,12 @@ class PlaylistRepository @Inject constructor(
         playlistDao.insertPlaylist(
             PlaylistEntity(name = name)
         )
+    }
+
+    fun removePlaylist(id: Int, withItems: Boolean = false) {
+        if (withItems) {
+            mediaToPlaylistDao.removeAllFromPlaylist(id)
+        }
+        playlistDao.removePlaylist(id)
     }
 }

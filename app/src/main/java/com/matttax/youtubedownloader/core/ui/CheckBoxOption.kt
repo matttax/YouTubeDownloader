@@ -3,7 +3,6 @@ package com.matttax.youtubedownloader.core.ui
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,11 +20,12 @@ fun CheckboxOption(
     text: String,
     checkedState: Flow<Boolean>,
     onCheck: (Boolean) -> Unit,
+    isCheckboxTransparent: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     val checked by checkedState.collectAsState(initial = false)
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .padding(horizontal = 10.dp)
             .clickable { onCheck(!checked) },
         horizontalArrangement = Arrangement.Center,
@@ -39,11 +39,19 @@ fun CheckboxOption(
         )
         Checkbox(
             modifier = Modifier.weight(0.2f),
-            colors = CheckboxDefaults.colors(
-                checkedColor = Color.Transparent,
-                uncheckedColor = Color.Transparent,
-                checkmarkColor = YouTubeRed,
-            ),
+            colors = if (isCheckboxTransparent) {
+                CheckboxDefaults.colors(
+                    checkedColor = Color.Transparent,
+                    uncheckedColor = Color.Transparent,
+                    checkmarkColor = YouTubeRed,
+                )
+            } else {
+                CheckboxDefaults.colors(
+                    checkedColor = YouTubeRed,
+                    uncheckedColor = YouTubeRed,
+                    checkmarkColor = Color.White,
+                )
+            },
             checked = checked,
             onCheckedChange = { onCheck(it) }
         )

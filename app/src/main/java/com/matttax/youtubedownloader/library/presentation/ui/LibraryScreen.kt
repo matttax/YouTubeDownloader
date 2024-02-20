@@ -24,8 +24,8 @@ fun LibraryScreen(
     viewModel: LibraryViewModel,
     onFullscreenEnter: (Boolean) -> Unit = { },
 ) {
+    val name by viewModel.playlistName.collectAsState("All media")
     val isMediaSelected by viewModel.isMediaItemSelected.collectAsState()
-    val name by viewModel.playlistName.collectAsState()
     var fullscreen by rememberSaveable { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
     val context = LocalContext.current

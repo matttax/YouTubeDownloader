@@ -6,6 +6,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -16,9 +17,10 @@ fun SettingsBlock(
 ) {
     Divider(modifier = Modifier.padding(vertical = 15.dp))
     Text(
-        modifier = Modifier.offset(x = 15.dp),
+        modifier = Modifier.offset(x = 15.dp).padding(bottom = 7.dp),
         text = text,
-        fontSize = 16.sp
+        fontSize = 16.sp,
+        fontWeight = FontWeight.Bold
     )
     settings()
 }

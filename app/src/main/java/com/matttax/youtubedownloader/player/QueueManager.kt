@@ -4,7 +4,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.ShuffleOrder
-import com.matttax.youtubedownloader.library.presentation.shift
+import com.matttax.youtubedownloader.core.shift
 import java.util.concurrent.atomic.AtomicReference
 
 class QueueManager(

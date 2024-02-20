@@ -3,6 +3,7 @@ package com.matttax.youtubedownloader.library.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.exoplayer.ExoPlayer
+import com.matttax.youtubedownloader.core.shift
 import com.matttax.youtubedownloader.library.presentation.diff.DiffCounter
 import com.matttax.youtubedownloader.library.presentation.diff.ListDiff
 import com.matttax.youtubedownloader.library.repositories.model.MediaItem
@@ -29,9 +30,6 @@ class LibraryViewModel @Inject constructor(
     val playlists = playlistRepository.getAllPlaylists()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    private val _playlistName = MutableStateFlow("All media")
-    val playlistName = _playlistName.asStateFlow()
-
     private val _mediaList = MutableStateFlow<List<MediaItem>>(emptyList())
     val mediaList = _mediaList.asStateFlow()
 
@@ -42,6 +40,9 @@ class LibraryViewModel @Inject constructor(
     val listEventFlow = listEventChannel.receiveAsFlow()
         .onStart { emit(ListDiff.SignificantDifference) }
 
+    private val _playlistDeletionOptions = MutableStateFlow(PlaylistDeletionOptions.NONE)
+    val playlistDeletionOptions = _playlistDeletionOptions.asStateFlow()
+
     val currentPlayingUri = playerDelegate.getCurrentPlayingUri()
     val isPlaying = playerDelegate.getIsPlaying()
 
@@ -51,6 +52,8 @@ class LibraryViewModel @Inject constructor(
     private val movableMediaItemId = MutableStateFlow<Long?>(null)
     private val selectedPlaylist = MutableStateFlow<Int?>(null)
     private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1)
+
+    val playlistName = MutableStateFlow("All media")
 
     init {
         observeMedia()
@@ -123,6 +126,30 @@ class LibraryViewModel @Inject constructor(
 
     fun onSelectPlaylist(id: Int, state: Boolean) {
         getMutablePlaylistSelected(id).value = state
+    }
+
+    fun onRemoveCurrentPlaylist() {
+        selectedPlaylist.value?.let {
+            selectedPlaylist.value = null
+            if (_playlistDeletionOptions.value == PlaylistDeletionOptions.NONE)
+                _playlistDeletionOptions.value = PlaylistDeletionOptions.JUST_PLAYLIST
+            viewModelScope.launch(Dispatchers.IO) {
+                when (_playlistDeletionOptions.value) {
+                    PlaylistDeletionOptions.JUST_PLAYLIST -> playlistRepository.removePlaylist(it)
+                    PlaylistDeletionOptions.PLAYLIST_WITH_ITEMS ->
+                        playlistRepository.removePlaylist(id = it, withItems = true)
+                    PlaylistDeletionOptions.NONE -> { }
+                }
+                _playlistDeletionOptions.value = PlaylistDeletionOptions.NONE
+            }
+        }
+    }
+
+    fun onPlaylistDeletionOptionsChanged(removeItems: Boolean) {
+        _playlistDeletionOptions.value = when (removeItems) {
+            true -> PlaylistDeletionOptions.PLAYLIST_WITH_ITEMS
+            false -> PlaylistDeletionOptions.JUST_PLAYLIST
+        }
     }
 
     fun getPlaylistSelectionState(id: Int): StateFlow<Boolean> {
@@ -219,7 +246,7 @@ class LibraryViewModel @Inject constructor(
                     playlistRepository.getPlaylistById(it)
                 }
             }.onEach {
-                _playlistName.value = it?.name ?: "All media"
+                playlistName.value = it?.name ?: "All media"
             }.launchIn(viewModelScope)
     }
 
@@ -242,17 +269,5 @@ class LibraryViewModel @Inject constructor(
                     selectedPlaylists.clear()
                 }
             }.launchIn(viewModelScope)
-    }
-}
-
-fun <T> MutableList<T>.shift(from: Int, to: Int) {
-    if (from < to) {
-        for (i in from until to) {
-            add(i, removeAt(i + 1))
-        }
-    } else {
-        for (i in from downTo to + 1) {
-            add(i, removeAt(i - 1))
-        }
     }
 }

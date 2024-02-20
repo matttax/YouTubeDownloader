@@ -26,4 +26,9 @@ interface MediaToPlaylistDao {
 
     @Query("DELETE FROM media_to_playlist WHERE media_id=:mediaId")
     fun removeFromAllPlaylists(mediaId: Long)
+
+    @Query(
+        "DELETE FROM media_item WHERE id IN (SELECT media_id FROM media_to_playlist WHERE playlist_id=:id)"
+    )
+    fun removeAllFromPlaylist(id: Int)
 }

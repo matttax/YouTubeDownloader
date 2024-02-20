@@ -12,6 +12,7 @@ import com.matttax.youtubedownloader.core.ui.*
 import com.matttax.youtubedownloader.core.ui.UiMediaModel
 import com.matttax.youtubedownloader.library.presentation.DialogOnScreen
 import com.matttax.youtubedownloader.library.presentation.LibraryViewModel
+import com.matttax.youtubedownloader.library.presentation.PlaylistDeletionOptions
 import com.matttax.youtubedownloader.library.presentation.ui.medialist.MediaItemCallback
 import com.matttax.youtubedownloader.library.presentation.ui.medialist.MediaListView
 import com.matttax.youtubedownloader.library.repositories.model.MediaItem
@@ -22,7 +23,7 @@ fun MediaList(
     viewModel: LibraryViewModel,
     modifier: Modifier = Modifier
 ) {
-    val titleText by viewModel.playlistName.collectAsState()
+    val titleText by viewModel.playlistName.collectAsState("All media")
     val mediaList by viewModel.mediaList.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
     val currentPlayingUri by viewModel.currentPlayingUri.collectAsState()
@@ -46,8 +47,12 @@ fun MediaList(
             Title(text = titleText)
             Spacer(Modifier.weight(1f))
             if (titleText != "All media") {
-                Option(resId = R.drawable.ic_edit)
-                Option(resId = R.drawable.ic_delete)
+                Option(resId = R.drawable.ic_edit) {
+
+                }
+                Option(resId = R.drawable.ic_delete) {
+                    dialogOnScreen = DialogOnScreen.DeleteCurrentPlaylist
+                }
             }
         }
         AndroidView(
@@ -61,16 +66,16 @@ fun MediaList(
                         }
 
                         override fun onDeleteClick(position: Int) {
-                            dialogOnScreen = DialogOnScreen.Delete(position)
+                            dialogOnScreen = DialogOnScreen.DeleteMedia(position)
                         }
 
                         override fun onMoveClick(position: Int) {
                             viewModel.getMediaItemPlaylists(mediaList[position].id)
-                            dialogOnScreen = DialogOnScreen.Move(position)
+                            dialogOnScreen = DialogOnScreen.MoveMediaToPlaylist(position)
                         }
 
                         override fun onEditClick(position: Int) {
-                            dialogOnScreen = DialogOnScreen.Edit(position)
+                            dialogOnScreen = DialogOnScreen.EditMedia(position)
                         }
                     }
                     it.onDragged = { from, to ->
@@ -92,14 +97,30 @@ fun MediaList(
     }
 
     when (val dialog = dialogOnScreen) {
-        is DialogOnScreen.Delete -> {
+        is DialogOnScreen.DeleteMedia -> {
             YesNoDialog(
                 text = "Are you ready to delete this item?",
                 onYes = { viewModel.onDeleteItem(mediaList[dialog.position]) },
                 onDismiss = { dialogOnScreen = DialogOnScreen.None }
             )
         }
-        is DialogOnScreen.Move -> {
+        is DialogOnScreen.DeleteCurrentPlaylist -> {
+            YesNoDialog(
+                text = "Are you ready to delete this playlist?",
+                onYes = { viewModel.onRemoveCurrentPlaylist() },
+                onDismiss = { dialogOnScreen = DialogOnScreen.None }
+            ) {
+                CheckboxOption(
+                    text = "Remove all items",
+                    checkedState = viewModel.playlistDeletionOptions
+                        .map { it == PlaylistDeletionOptions.PLAYLIST_WITH_ITEMS },
+                    isCheckboxTransparent = false,
+                    modifier = Modifier.fillMaxWidth(0.9f).padding(15.dp),
+                    onCheck = { viewModel.onPlaylistDeletionOptionsChanged(removeItems = it) }
+                )
+            }
+        }
+        is DialogOnScreen.MoveMediaToPlaylist -> {
             YesNoDialog(
                 text = "Add to playlist",
                 onYes = {
@@ -125,7 +146,7 @@ fun MediaList(
                 }
             }
         }
-        is DialogOnScreen.Edit -> {
+        is DialogOnScreen.EditMedia -> {
             EditDialog(
                 mediaItem = mediaList[dialog.position],
                 onEdit = { newTitle, newAuthor ->

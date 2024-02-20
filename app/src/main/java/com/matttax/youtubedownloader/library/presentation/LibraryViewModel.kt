@@ -50,7 +50,7 @@ class LibraryViewModel @Inject constructor(
         Collections.synchronizedMap(HashMap<Int, MutableStateFlow<Boolean>>())
 
     private val movableMediaItemId = MutableStateFlow<Long?>(null)
-    private val selectedPlaylist = MutableStateFlow<Int?>(null)
+    private val selectedPlaylistId = MutableStateFlow<Int?>(null)
     private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1)
 
     val playlistName = MutableStateFlow("All media")
@@ -101,7 +101,15 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun onChoosePlaylist(id: Int?) {
-        selectedPlaylist.value = id
+        selectedPlaylistId.value = id
+    }
+
+    fun onRenameCurrentPlaylist(newName: String) {
+        selectedPlaylistId.value?.let {
+            viewModelScope.launch(Dispatchers.IO) {
+                playlistRepository.renamePlaylist(it, newName)
+            }
+        }
     }
 
     fun onDeleteItem(mediaItem: MediaItem) = viewModelScope.launch(Dispatchers.IO) {
@@ -129,8 +137,8 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun onRemoveCurrentPlaylist() {
-        selectedPlaylist.value?.let {
-            selectedPlaylist.value = null
+        selectedPlaylistId.value?.let {
+            selectedPlaylistId.value = null
             if (_playlistDeletionOptions.value == PlaylistDeletionOptions.NONE)
                 _playlistDeletionOptions.value = PlaylistDeletionOptions.JUST_PLAYLIST
             viewModelScope.launch(Dispatchers.IO) {
@@ -222,7 +230,7 @@ class LibraryViewModel @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeMedia() {
-        selectedPlaylist
+        selectedPlaylistId
             .combine(refreshTrigger) { playlist, _ ->
                 playlist
             }
@@ -238,7 +246,7 @@ class LibraryViewModel @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observePlaylistName() {
-        selectedPlaylist
+        selectedPlaylistId
             .flatMapLatest {
                 if (it == null) {
                     flow<Playlist?> { emit(null) }

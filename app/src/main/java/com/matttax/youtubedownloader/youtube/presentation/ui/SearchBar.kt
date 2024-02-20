@@ -48,6 +48,7 @@ fun SearchBar(
             focusedIndicatorColor = YouTubeRed,
             focusedContainerColor = Color.White,
             unfocusedContainerColor = Color.LightGray.copy(alpha = 0.1f),
+            cursorColor = YouTubeRed
         ),
         textStyle = TextStyle.Default.copy(fontSize = 16.sp),
         interactionSource = interactionSource

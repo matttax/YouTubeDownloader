@@ -34,4 +34,8 @@ class PlaylistRepository @Inject constructor(
         }
         playlistDao.removePlaylist(id)
     }
+
+    fun renamePlaylist(id: Int, newName: String) {
+        playlistDao.renamePlaylist(id, newName)
+    }
 }

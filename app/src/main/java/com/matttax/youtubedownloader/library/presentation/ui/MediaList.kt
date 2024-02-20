@@ -5,11 +5,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.matttax.youtubedownloader.R
 import com.matttax.youtubedownloader.core.ui.*
 import com.matttax.youtubedownloader.core.ui.UiMediaModel
+import com.matttax.youtubedownloader.core.ui.utils.keyboardAsState
 import com.matttax.youtubedownloader.library.presentation.DialogOnScreen
 import com.matttax.youtubedownloader.library.presentation.LibraryViewModel
 import com.matttax.youtubedownloader.library.presentation.PlaylistDeletionOptions
@@ -23,15 +26,23 @@ fun MediaList(
     viewModel: LibraryViewModel,
     modifier: Modifier = Modifier
 ) {
-    val titleText by viewModel.playlistName.collectAsState("All media")
+    val titleText by viewModel.playlistName.collectAsState()
     val mediaList by viewModel.mediaList.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
     val currentPlayingUri by viewModel.currentPlayingUri.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
 
     var dialogOnScreen by remember { mutableStateOf<DialogOnScreen>(DialogOnScreen.None) }
+    var editingTitle by remember { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+    val isKeyboardOpen by keyboardAsState()
 
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(isKeyboardOpen) {
+        if (!isKeyboardOpen && editingTitle)
+            editingTitle = false
+    }
 
     Column(
         modifier = modifier
@@ -41,17 +52,31 @@ fun MediaList(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Option(resId = R.drawable.ic_shuffle) {
-                viewModel.onPlayShuffled()
-            }
-            Title(text = titleText)
-            Spacer(Modifier.weight(1f))
-            if (titleText != "All media") {
-                Option(resId = R.drawable.ic_edit) {
-
+            if (!editingTitle) {
+                Option(resId = R.drawable.ic_shuffle) {
+                    viewModel.onPlayShuffled()
                 }
-                Option(resId = R.drawable.ic_delete) {
-                    dialogOnScreen = DialogOnScreen.DeleteCurrentPlaylist
+                Title(text = titleText)
+                Spacer(Modifier.weight(1f))
+                if (titleText != "All media") {
+                    Option(resId = R.drawable.ic_edit) {
+                        editingTitle = true
+                    }
+                    Option(resId = R.drawable.ic_delete) {
+                        dialogOnScreen = DialogOnScreen.DeleteCurrentPlaylist
+                    }
+                }
+            } else {
+                EditPlaylistName(
+                    modifier = Modifier.focusRequester(focusRequester),
+                    initial = titleText,
+                    onChange = {
+                        viewModel.onRenameCurrentPlaylist(it)
+                        editingTitle = false
+                    }
+                )
+                LaunchedEffect(editingTitle) {
+                    focusRequester.requestFocus()
                 }
             }
         }
@@ -60,6 +85,7 @@ fun MediaList(
                 MediaListView(context).also {
                     it.mediaItemCallback = object : MediaItemCallback {
                         override fun onClick(id: String, position: Int) {
+                            editingTitle = false
                             if (id == currentPlayingUri) {
                                 if (isPlaying) viewModel.onPausePlayback() else viewModel.onResumePlayback()
                             } else viewModel.onSetItem(position)
@@ -115,7 +141,9 @@ fun MediaList(
                     checkedState = viewModel.playlistDeletionOptions
                         .map { it == PlaylistDeletionOptions.PLAYLIST_WITH_ITEMS },
                     isCheckboxTransparent = false,
-                    modifier = Modifier.fillMaxWidth(0.9f).padding(15.dp),
+                    modifier = Modifier
+                        .fillMaxWidth(0.9f)
+                        .padding(15.dp),
                     onCheck = { viewModel.onPlaylistDeletionOptionsChanged(removeItems = it) }
                 )
             }

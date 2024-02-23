@@ -16,13 +16,17 @@ class QueueManager(
 
     private var _queue = AtomicReference<List<Int>?>(null)
 
-    fun initQueue(size: Int, shuffled: Boolean = false) {
-        exoPlayer.shuffleModeEnabled = true
+    fun initQueue(size: Int, shuffled: Boolean = false): Int {
         val queueList = (0 until size).toList()
-        _queue.set(
-            if (shuffled) queueList.shuffled() else queueList
-        )
-        trySetQueue()
+        return if (shuffled) {
+            val shuffledQueue = queueList.shuffled()
+            _queue.set(shuffledQueue)
+            trySetQueue()
+            shuffledQueue[0]
+        } else {
+            _queue.set(queueList)
+            0
+        }
     }
 
     fun onItemMoved(from: Int, to: Int) {
@@ -36,8 +40,11 @@ class QueueManager(
     private fun trySetQueue() {
         val queueArray = _queue.get()?.toIntArray() ?: return
         if (exoPlayer.mediaItemCount != queueArray.size) return
-        exoPlayer.setShuffleOrder(
-            ShuffleOrder.DefaultShuffleOrder(queueArray, 0)
-        )
+        exoPlayer.apply {
+            if (!shuffleModeEnabled) shuffleModeEnabled = true
+            setShuffleOrder(
+                ShuffleOrder.DefaultShuffleOrder(queueArray, 0)
+            )
+        }
     }
 }

@@ -1,8 +1,12 @@
 package com.matttax.youtubedownloader
 
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -25,6 +29,7 @@ import com.matttax.youtubedownloader.navigation.BottomNavigationItems
 import com.matttax.youtubedownloader.navigation.ui.BottomNavigationBar
 import com.matttax.youtubedownloader.navigation.ui.NavigationAnimations
 import com.matttax.youtubedownloader.navigation.ui.TabNameBar
+import com.matttax.youtubedownloader.player.PlaybackService
 import com.matttax.youtubedownloader.settings.presentation.SettingsViewModel
 import com.matttax.youtubedownloader.settings.presentation.ui.SettingsScreen
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
@@ -33,6 +38,25 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val searchViewModel: SearchViewModel by viewModels()
+    private val settingsViewModel: SettingsViewModel by viewModels()
+    private val libraryViewModel: LibraryViewModel by viewModels()
+
+    private lateinit var playbackService: PlaybackService
+
+    private val connection = object : ServiceConnection {
+
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            val binder = service as PlaybackService.LocalBinder
+            playbackService = binder.getService()
+            libraryViewModel.setPlayerQueueDelegate(playbackService)
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            libraryViewModel.removePlayerQueueCallback()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,9 +68,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             showSystemUi()
             val navController = rememberNavController()
-            val searchViewModel: SearchViewModel by viewModels()
-            val settingsViewModel: SettingsViewModel by viewModels()
-            val libraryViewModel: LibraryViewModel by viewModels()
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             var fullscreen by rememberSaveable { mutableStateOf(true) }
             Column {
@@ -81,13 +102,14 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier
                                 .fillMaxHeight(if (fullscreen) 0.95f else 1f)
                                 .padding(bottom = if (fullscreen) 10.dp else 0.dp),
-                            viewModel = libraryViewModel
-                        ) { isFullscreen ->
-                            fullscreen = !isFullscreen
-                            if (isFullscreen) {
-                                hideSystemUi()
-                            } else showSystemUi()
-                        }
+                            viewModel = libraryViewModel,
+                            onFullscreenEnter = { isFullscreen ->
+                                fullscreen = !isFullscreen
+                                if (isFullscreen) {
+                                    hideSystemUi()
+                                } else showSystemUi()
+                            }
+                        )
                     }
                     composable(
                         route = BottomNavigationItems.SETTINGS.routeName,
@@ -116,6 +138,21 @@ class MainActivity : ComponentActivity() {
                     ).commit()
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Intent(this@MainActivity, PlaybackService::class.java)
+            .also {
+                it.addCategory(Intent.CATEGORY_MONKEY)
+                bindService(it, connection, Context.BIND_AUTO_CREATE)
+            }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unbindService(connection)
+        libraryViewModel.removePlayerQueueCallback()
     }
 
     companion object {

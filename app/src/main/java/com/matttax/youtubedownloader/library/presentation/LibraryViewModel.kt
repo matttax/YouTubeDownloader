@@ -2,7 +2,7 @@ package com.matttax.youtubedownloader.library.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.common.Player
 import com.matttax.youtubedownloader.core.shift
 import com.matttax.youtubedownloader.library.presentation.diff.DiffCounter
 import com.matttax.youtubedownloader.library.presentation.diff.ListDiff
@@ -10,7 +10,9 @@ import com.matttax.youtubedownloader.library.repositories.model.MediaItem
 import com.matttax.youtubedownloader.library.repositories.model.Playlist
 import com.matttax.youtubedownloader.library.repositories.MediaRepository
 import com.matttax.youtubedownloader.library.repositories.PlaylistRepository
+import com.matttax.youtubedownloader.player.PlayerQueueDelegate
 import com.matttax.youtubedownloader.player.PlayerDelegate
+import com.matttax.youtubedownloader.player.model.PlayerMediaMetadata
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -44,7 +46,14 @@ class LibraryViewModel @Inject constructor(
     val playlistDeletionOptions = _playlistDeletionOptions.asStateFlow()
 
     val currentPlayingUri = playerDelegate.getCurrentPlayingUri()
+
     val isPlaying = playerDelegate.getIsPlaying()
+        .onEach {
+            if (it && !_isMediaItemSelected.value) {
+                _isMediaItemSelected.value = true
+                playerQueueDelegate?.getQueue()?.let { queue -> forceOrderItems(queue) }
+            }
+        }
 
     private val selectedPlaylists =
         Collections.synchronizedMap(HashMap<Int, MutableStateFlow<Boolean>>())
@@ -54,6 +63,8 @@ class LibraryViewModel @Inject constructor(
     private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1)
 
     val playlistName = MutableStateFlow("All media")
+
+    private var playerQueueDelegate: PlayerQueueDelegate? = null
 
     init {
         observeMedia()
@@ -67,31 +78,43 @@ class LibraryViewModel @Inject constructor(
         playerDelegate.release()
     }
 
-    fun getExoInstance(): ExoPlayer {
-        return playerDelegate.exoPlayer
+    fun getExoInstance(): Player {
+        return playerDelegate.player
+    }
+
+    fun setPlayerQueueDelegate(delegate: PlayerQueueDelegate) {
+        playerQueueDelegate = delegate
+    }
+
+    fun removePlayerQueueCallback() {
+        playerQueueDelegate = null
     }
 
     fun onSetItem(itemPosition: Int) {
         _isMediaItemSelected.value = true
-        val mediaUris = _mediaList.value.map { it.path }
-        playerDelegate.play(mediaUris, itemPosition)
+        if (!playerDelegate.shuffled) {
+            playerDelegate.play(
+                playlist = _mediaList.value.map { it.toPlayerMediaMetadata() },
+                startPosition = itemPosition
+            )
+            playerQueueDelegate?.initQueue(size = mediaList.value.size, shuffle = false)
+        } else {
+            playerQueueDelegate?.seekInQueue(itemPosition)
+        }
     }
 
     fun onPlayShuffled() {
         _isMediaItemSelected.value = true
-        val mediaUris = _mediaList.value.map { it.path }
-        playerDelegate.play(
-            playlist = mediaUris,
-            startPosition = 0,
-            shuffled = true
-        )
-        playerDelegate.getQueue()?.let { forceOrderItems(it) }
+        playerQueueDelegate?.apply {
+            playShuffled(_mediaList.value.map { it.toPlayerMediaMetadata() })
+            getQueue()?.let { forceOrderItems(it) }
+        }
+        playerDelegate.notifyShuffled()
     }
 
     fun onStopPlayback() {
         _isMediaItemSelected.value = false
         playerDelegate.pause()
-        playerDelegate.clear()
     }
 
     fun onAddPlaylist(name: String) {
@@ -176,7 +199,7 @@ class LibraryViewModel @Inject constructor(
     fun onItemsShifted(from: Int, to: Int) {
         updateMediaList { shift(from, to) }
         viewModelScope.launch { listEventChannel.send(ListDiff.NoDifference) }
-        playerDelegate.shiftItemInQueue(from, to)
+        playerQueueDelegate?.shiftItemInQueue(from, to)
     }
 
     fun onPausePlayback() = playerDelegate.pause()
@@ -279,3 +302,10 @@ class LibraryViewModel @Inject constructor(
             }.launchIn(viewModelScope)
     }
 }
+
+fun MediaItem.toPlayerMediaMetadata() = PlayerMediaMetadata(
+    title = title,
+    author = author,
+    thumbnailUri = thumbnailUri,
+    contentUri = path
+)

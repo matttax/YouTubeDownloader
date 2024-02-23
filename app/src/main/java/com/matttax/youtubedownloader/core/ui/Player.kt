@@ -9,15 +9,15 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.matttax.youtubedownloader.R
 
 @OptIn(UnstableApi::class)
 @Composable
 fun Player(
-    exoPlayer: ExoPlayer,
+    exoPlayer: Player,
     modifier: Modifier = Modifier,
     showNavigationButtons: Boolean = false,
     onPause: () -> Unit = { },

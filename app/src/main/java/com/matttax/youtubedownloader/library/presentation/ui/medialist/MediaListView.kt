@@ -36,8 +36,8 @@ class MediaListView @JvmOverloads constructor(
     fun init(
         listFlow: Flow<List<UiMediaModel>>,
         eventFlow: Flow<ListDiff>,
-        currentUriFlow: StateFlow<String?>,
-        isPlayingFlow: StateFlow<Boolean>,
+        currentUriFlow: Flow<String?>,
+        isPlayingFlow: Flow<Boolean>,
         scope: CoroutineScope
     ) {
         with(scope) {
@@ -77,10 +77,12 @@ class MediaListView @JvmOverloads constructor(
     }
 
     private fun CoroutineScope.observePlayingState(
-        currentUriFlow: StateFlow<String?>,
-        isPlayingFlow: StateFlow<Boolean>
+        currentUriFlow: Flow<String?>,
+        isPlayingFlow: Flow<Boolean>
     ) {
-        currentUriFlow.combine(isPlayingFlow) { uri, isPlaying ->
+        currentUriFlow.combine(
+            isPlayingFlow
+        ) { uri, isPlaying ->
             when {
                 uri != null && isPlaying -> PlayingState.Playing(uri)
                 uri != null && !isPlaying -> PlayingState.Paused(uri)

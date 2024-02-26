@@ -1,6 +1,7 @@
 package com.matttax.youtubedownloader.youtube.presentation.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.*
@@ -65,13 +66,14 @@ fun YoutubeSearchScreen(
 
     val pullRefreshState = rememberPullRefreshState(
         refreshing = searchState == YoutubeSearchState.Loading,
-        refreshThreshold = 30.dp,
+        refreshThreshold = 80.dp,
         onRefresh = viewModel::onRefresh
     )
 
 
     Scaffold(
-        modifier = modifier,
+        modifier = modifier
+            .background(color = MaterialTheme.colorScheme.background),
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) {
         Column {
@@ -100,10 +102,9 @@ fun YoutubeSearchScreen(
                 }
             )
             Divider(
-                modifier = Modifier.padding(
-                    vertical = 3.dp,
-                    horizontal = 5.dp
-                )
+                modifier = Modifier
+                    .padding(horizontal = 5.dp),
+                color = MaterialTheme.colorScheme.onPrimary
             )
             when (searchState) {
                 is YoutubeSearchState.Loading -> {
@@ -129,9 +130,7 @@ fun YoutubeSearchScreen(
                                 modifier = Modifier
                                     .navigationBarsPadding()
                                     .offset(
-                                        y = 20.dp + (pullRefreshState.progress * 10)
-                                            .roundToInt()
-                                            .coerceAtMost(50).dp
+                                        y = (pullRefreshState.progress * 80).dp
                                     )
                                     .padding(5.dp),
                             ) {

@@ -10,8 +10,10 @@ import com.google.gson.reflect.TypeToken
 class InternalStorageSaver : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
+        println("start receive")
         if (context == null) return
         if (DownloadManager.ACTION_DOWNLOAD_COMPLETE == intent?.action) {
+            println("start copy")
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             val currentDownloading = context.getSharedPreferences("Downloading", Context.MODE_PRIVATE)
             val cursor = downloadManager.query(DownloadManager.Query())

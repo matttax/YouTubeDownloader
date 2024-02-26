@@ -11,8 +11,8 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.MoreExecutors
 import com.matttax.youtubedownloader.core.model.Format
-import com.matttax.youtubedownloader.player.listeners.StreamingMediaProvider
-import com.matttax.youtubedownloader.player.listeners.PlayerReadyProvider
+import com.matttax.youtubedownloader.player.providers.StreamingMediaProvider
+import com.matttax.youtubedownloader.player.providers.PlayerReadyProvider
 import com.matttax.youtubedownloader.player.model.MediaStreamingOptions
 import com.matttax.youtubedownloader.player.model.PlayerMediaMetadata
 import dagger.hilt.android.qualifiers.ApplicationContext

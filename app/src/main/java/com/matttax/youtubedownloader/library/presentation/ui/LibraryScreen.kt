@@ -6,7 +6,9 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -36,6 +38,7 @@ fun LibraryScreen(
 
     Column(
         modifier = modifier
+            .background(color = MaterialTheme.colorScheme.background)
     ) {
         if (!fullscreen) {
             AnimatedVisibility(
@@ -60,7 +63,11 @@ fun LibraryScreen(
                         .fillMaxWidth()
                         .weight(0.16f)
                         .padding(vertical = 7.dp)
-                        .shadow(1.dp),
+                        .shadow(
+                            elevation = 1.dp,
+                            ambientColor = MaterialTheme.colorScheme.onPrimary,
+                            spotColor = MaterialTheme.colorScheme.onPrimary
+                        ),
                     playlistsState = viewModel.playlists,
                     onNewCreate = viewModel::onAddPlaylist,
                     onSelected = viewModel::onChoosePlaylist

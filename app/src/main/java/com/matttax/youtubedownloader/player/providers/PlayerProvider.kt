@@ -1,9 +1,9 @@
-package com.matttax.youtubedownloader.player.listeners
+package com.matttax.youtubedownloader.player.providers
 
 import androidx.media3.common.Player
 import kotlinx.coroutines.flow.StateFlow
 
-interface PlayerProviderListener<T> : Player.Listener {
+interface PlayerProvider<T> : Player.Listener {
     val valueFlow: StateFlow<T>
     fun notifyValueChanged(value: T)
 }

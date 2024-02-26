@@ -3,6 +3,7 @@ package com.matttax.youtubedownloader.core.ui
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -76,12 +77,13 @@ fun MediaItem(
             Text(
                 text = videoData.name,
                 maxLines = 2,
+                color = MaterialTheme.colorScheme.onPrimary,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = videoData.author,
                 maxLines = 1,
-                color = Color.Gray,
+                color = MaterialTheme.colorScheme.onSecondary,
                 fontSize = 10.sp
             )
         }

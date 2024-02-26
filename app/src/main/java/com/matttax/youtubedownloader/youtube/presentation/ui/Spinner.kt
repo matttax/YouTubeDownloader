@@ -1,11 +1,10 @@
 package com.matttax.youtubedownloader.youtube.presentation.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,15 +25,17 @@ fun <T> Spinner(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected by selectedOption.collectAsState(initial = "")
+
     Box(
         modifier = modifier
+            .background(color = MaterialTheme.colorScheme.onBackground)
     ) {
         Button(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(6),
             colors = if (expanded)
-                ButtonDefaults.buttonColors(Color.White)
-            else ButtonDefaults.buttonColors(Color.White.copy(alpha = 0.4f)),
+                ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onBackground)
+            else ButtonDefaults.buttonColors(MaterialTheme.colorScheme.onSurface),
             onClick = { expanded = true }
         ) {
             Column(
@@ -43,19 +44,23 @@ fun <T> Spinner(
             ) {
                 Text(
                     text = name,
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
                 Text(
                     text = selected,
                     fontSize = 9.sp,
-                    color = YouTubeRed.copy(alpha = 0.5f)
+                    color = YouTubeRed.copy(
+                        alpha = if (isSystemInDarkTheme()) 1f else 0.5f
+                    )
                 )
             }
         }
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.fillMaxWidth(optionSize)
+            modifier = Modifier
+                .background(color = MaterialTheme.colorScheme.onBackground)
+                .fillMaxWidth(optionSize)
         ) {
             for (option in options.argumentMap) {
                 Button(
@@ -65,8 +70,8 @@ fun <T> Spinner(
                         .padding(start = 3.dp, end = 3.dp),
                     shape = RoundedCornerShape(20),
                     colors = if (option.key == selected)
-                        ButtonDefaults.buttonColors(Color.Red.copy(alpha = 0.3f, red = 0.8f))
-                    else ButtonDefaults.buttonColors(Color.White.copy(alpha = 0.6f)),
+                        ButtonDefaults.buttonColors(YouTubeRed.copy(alpha = 0.3f))
+                    else ButtonDefaults.textButtonColors(),
                     onClick = {
                         options.action(option.value)
                         expanded = false
@@ -74,7 +79,7 @@ fun <T> Spinner(
                 ) {
                     Text(
                         text = option.key,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         fontSize = 12.sp
                     )
                 }

@@ -3,6 +3,7 @@ package com.matttax.youtubedownloader.library.presentation.ui
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
@@ -44,6 +45,7 @@ fun EditPlaylistName(
         ),
         textStyle = TextStyle(
             fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onPrimary,
             fontWeight = FontWeight.Bold
         )
     )

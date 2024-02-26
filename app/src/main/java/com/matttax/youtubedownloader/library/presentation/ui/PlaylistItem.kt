@@ -2,12 +2,15 @@ package com.matttax.youtubedownloader.library.presentation.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -38,15 +41,18 @@ fun PlaylistItem(
                     .size(35.dp)
                     .background(
                         shape = CircleShape,
-                        color = Color.LightGray.copy(alpha = 0.3f)
-                    ),
+                        color = if (!isSystemInDarkTheme())
+                            MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.3f)
+                        else MaterialTheme.colorScheme.onBackground
+                    )
+                    .padding(5.dp),
                 painter = painterResource(id = drawableId),
                 contentDescription = null,
             )
             Text(
-                text = if (text.length >= 10) text.substring(0, 7).plus("...") else text,
-                color = Color.Black.copy(alpha = 0.8f),
-                fontSize = 12.sp,
+                text = if (text.length >= 15) text.substring(0, 12).plus("...") else text,
+                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1
             )

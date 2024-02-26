@@ -10,7 +10,10 @@ import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
@@ -20,6 +23,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.matttax.youtubedownloader.core.ui.theme.YouTubeDownloaderTheme
 import com.matttax.youtubedownloader.core.ui.utils.hideSystemUi
 import com.matttax.youtubedownloader.core.ui.utils.setScreenOrientation
 import com.matttax.youtubedownloader.core.ui.utils.showSystemUi
@@ -66,76 +70,82 @@ class MainActivity : ComponentActivity() {
         val initialItem = sharedPrefs.getString(BASIC_SETTINGS_TAB_KEY, BottomNavigationItems.LIBRARY.routeName)
             ?: BottomNavigationItems.LIBRARY.routeName
         setContent {
-            showSystemUi()
-            val navController = rememberNavController()
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            var fullscreen by rememberSaveable { mutableStateOf(true) }
-            Column {
-                if (fullscreen) {
-                    TabNameBar(
-                        name = navBackStackEntry?.destination?.route.routeToScreenName()
-                    )
-                }
-                NavHost(
-                    navController = navController,
-                    startDestination = initialItem
+            YouTubeDownloaderTheme {
+                showSystemUi()
+                val navController = rememberNavController()
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                var fullscreen by rememberSaveable { mutableStateOf(true) }
+                Column(
+                    modifier = Modifier
+                        .background(color = MaterialTheme.colorScheme.background)
                 ) {
-                    composable(
-                        route = BottomNavigationItems.YOUTUBE.routeName,
-                        enterTransition = NavigationAnimations.enterTransition,
-                        exitTransition = NavigationAnimations.exitTransition
-                    ) {
-                        YoutubeSearchScreen(
-                            modifier = Modifier
-                                .fillMaxHeight(0.95f)
-                                .padding(bottom = 10.dp),
-                            viewModel = searchViewModel
+                    if (fullscreen) {
+                        TabNameBar(
+                            name = navBackStackEntry?.destination?.route.routeToScreenName()
                         )
                     }
-                    composable(
-                        route = BottomNavigationItems.LIBRARY.routeName,
-                        enterTransition = NavigationAnimations.enterTransition,
-                        exitTransition = NavigationAnimations.exitTransition
+                    NavHost(
+                        navController = navController,
+                        startDestination = initialItem
                     ) {
-                        searchViewModel.onQuit()
-                        LibraryScreen(
-                            modifier = Modifier
-                                .fillMaxHeight(if (fullscreen) 0.95f else 1f)
-                                .padding(bottom = if (fullscreen) 10.dp else 0.dp),
-                            viewModel = libraryViewModel,
-                            onFullscreenEnter = { isFullscreen ->
-                                fullscreen = !isFullscreen
-                                if (isFullscreen) {
-                                    hideSystemUi()
-                                } else showSystemUi()
-                            }
-                        )
+                        composable(
+                            route = BottomNavigationItems.YOUTUBE.routeName,
+                            enterTransition = NavigationAnimations.enterTransition,
+                            exitTransition = NavigationAnimations.exitTransition
+                        ) {
+                            YoutubeSearchScreen(
+                                modifier = Modifier
+                                    .fillMaxHeight(0.95f)
+                                    .padding(bottom = 10.dp),
+                                viewModel = searchViewModel
+                            )
+                        }
+                        composable(
+                            route = BottomNavigationItems.LIBRARY.routeName,
+                            enterTransition = NavigationAnimations.enterTransition,
+                            exitTransition = NavigationAnimations.exitTransition
+                        ) {
+                            searchViewModel.onQuit()
+                            LibraryScreen(
+                                modifier = Modifier
+                                    .fillMaxHeight(if (fullscreen) 0.95f else 1f)
+                                    .padding(bottom = if (fullscreen) 10.dp else 0.dp),
+                                viewModel = libraryViewModel,
+                                onFullscreenEnter = { isFullscreen ->
+                                    fullscreen = !isFullscreen
+                                    if (isFullscreen) {
+                                        hideSystemUi()
+                                    } else showSystemUi()
+                                }
+                            )
+                        }
+                        composable(
+                            route = BottomNavigationItems.SETTINGS.routeName,
+                            enterTransition = NavigationAnimations.enterTransition,
+                            exitTransition = NavigationAnimations.exitTransition
+                        ) {
+                            searchViewModel.onQuit()
+                            SettingsScreen(
+                                modifier = Modifier.fillMaxHeight(0.95f),
+                                viewModel = settingsViewModel
+                            )
+                        }
                     }
-                    composable(
-                        route = BottomNavigationItems.SETTINGS.routeName,
-                        enterTransition = NavigationAnimations.enterTransition,
-                        exitTransition = NavigationAnimations.exitTransition
-                    ) {
-                        searchViewModel.onQuit()
-                        SettingsScreen(
-                            modifier = Modifier.fillMaxHeight(0.95f),
-                            viewModel = settingsViewModel
+                    if (fullscreen) {
+                        BottomNavigationBar(
+                            navController,
+                            ROUTES_MAP[initialItem] ?: BottomNavigationItems.LIBRARY
                         )
                     }
                 }
-                if (fullscreen) {
-                    BottomNavigationBar(
-                        navController,
-                        ROUTES_MAP[initialItem] ?: BottomNavigationItems.LIBRARY
-                    )
+                LaunchedEffect(navBackStackEntry) {
+                    sharedPrefs.edit()
+                        .putString(
+                            BASIC_SETTINGS_TAB_KEY,
+                            navBackStackEntry?.destination?.route
+                                ?: BottomNavigationItems.LIBRARY.routeName
+                        ).apply()
                 }
-            }
-            LaunchedEffect(navBackStackEntry) {
-                sharedPrefs.edit()
-                    .putString(
-                        BASIC_SETTINGS_TAB_KEY,
-                        navBackStackEntry?.destination?.route ?: BottomNavigationItems.LIBRARY.routeName
-                    ).commit()
             }
         }
     }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -36,6 +37,7 @@ fun CheckboxOption(
                 .weight(0.8f)
                 .offset(x = 15.dp),
             text = text,
+            color = MaterialTheme.colorScheme.onPrimary
         )
         Checkbox(
             modifier = Modifier.weight(0.2f),

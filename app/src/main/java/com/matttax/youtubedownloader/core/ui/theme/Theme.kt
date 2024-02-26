@@ -12,10 +12,10 @@ private val DarkColorPalette = darkColorScheme(
     secondary = LeafGreen,
     background = Color.Black,
     surface = Color.Black,
-    onPrimary = Color.Black,
-    onSecondary = Color.White,
-    onBackground = Color.White,
-    onSurface = Color.White,
+    onPrimary = Color.White,
+    onSecondary = Color.LightGray,
+    onBackground = Color.Black,
+    onSurface = Color.Black,
 )
 
 private val LightColorPalette = lightColorScheme(
@@ -23,10 +23,10 @@ private val LightColorPalette = lightColorScheme(
     secondary = LeafGreen,
     background = Color.White,
     surface = Color.White,
-    onPrimary = Color.White,
-    onSecondary = Color.Black,
-    onBackground = Color.Black,
-    onSurface = Color.Black,
+    onPrimary = Color.Black,
+    onSecondary = Color.Gray,
+    onBackground = Color.White,
+    onSurface = Color.LightGray.copy(alpha = 0.2f),
 )
 
 @Composable

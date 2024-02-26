@@ -1,9 +1,11 @@
 package com.matttax.youtubedownloader.navigation.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,7 +21,9 @@ import com.matttax.youtubedownloader.navigation.BottomNavigationItems
 @Composable
 fun BottomNavigationBar(navController: NavController, initialItem: BottomNavigationItems) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .background(color = MaterialTheme.colorScheme.background)
+            .fillMaxWidth(),
         verticalAlignment = Alignment.Top
     ) {
         var selectedBottomItem by rememberSaveable { mutableStateOf(initialItem) }
@@ -33,7 +37,8 @@ fun BottomNavigationBar(navController: NavController, initialItem: BottomNavigat
             onClick = {
                 selectedBottomItem = BottomNavigationItems.LIBRARY
                 navController.navigate(BottomNavigationItems.LIBRARY.routeName) {
-                    popUpTo(navController.graph.id)
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
                 }
             }
         )
@@ -46,7 +51,8 @@ fun BottomNavigationBar(navController: NavController, initialItem: BottomNavigat
             onClick = {
                 selectedBottomItem = BottomNavigationItems.YOUTUBE
                 navController.navigate(BottomNavigationItems.YOUTUBE.routeName) {
-                    popUpTo(navController.graph.id)
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
                 }
             }
         )
@@ -58,7 +64,8 @@ fun BottomNavigationBar(navController: NavController, initialItem: BottomNavigat
             onClick = {
                 selectedBottomItem = BottomNavigationItems.SETTINGS
                 navController.navigate(BottomNavigationItems.SETTINGS.routeName) {
-                    popUpTo(navController.graph.id)
+                    popUpTo(navController.graph.startDestinationId)
+                    launchSingleTop = true
                 }
             }
         )

@@ -73,13 +73,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
-            android:layout_toEndOf="@id/thumbnail"
             android:layout_toStartOf="@id/duration"
+            android:layout_toEndOf="@id/thumbnail"
             android:ellipsize="end"
             android:maxLines="1"
             android:paddingHorizontal="10dp"
             android:text="Untitled"
-            android:textColor="@color/black"
+            android:textColor="?android:attr/textColorPrimary"
             android:textSize="14sp" />
 
         <TextView

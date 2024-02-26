@@ -5,11 +5,13 @@ import android.content.Context
 import android.graphics.Rect
 import android.view.View
 import android.view.ViewTreeObserver
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.matttax.youtubedownloader.R
 
 fun Activity.hideSystemUi() {
     WindowCompat.setDecorFitsSystemWindows(window, false)

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -32,9 +33,9 @@ fun SearchBar(
     val query by searchText.collectAsState()
     TextField(
         modifier = Modifier
-            .background(color = Color.White)
+            .background(color = MaterialTheme.colorScheme.onBackground)
             .fillMaxWidth()
-            .padding(5.dp),
+            .padding(horizontal = 5.dp),
         value = query,
         onValueChange = onChange,
         placeholder = { Text("Search") },
@@ -45,12 +46,15 @@ fun SearchBar(
         ),
         shape = RoundedCornerShape(20),
         colors = TextFieldDefaults.colors(
+            cursorColor = YouTubeRed,
             focusedIndicatorColor = YouTubeRed,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.LightGray.copy(alpha = 0.1f),
-            cursorColor = YouTubeRed
+            focusedContainerColor = MaterialTheme.colorScheme.onBackground,
+            unfocusedContainerColor = MaterialTheme.colorScheme.onSurface,
         ),
-        textStyle = TextStyle.Default.copy(fontSize = 16.sp),
+        textStyle = TextStyle.Default.copy(
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onPrimary
+        ),
         interactionSource = interactionSource
     )
 }

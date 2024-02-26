@@ -1,12 +1,16 @@
 package com.matttax.youtubedownloader.settings.presentation.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.matttax.youtubedownloader.core.ui.CheckboxOption
 import com.matttax.youtubedownloader.settings.model.SearchOptions
 import com.matttax.youtubedownloader.settings.presentation.SettingsViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
 @Composable
@@ -14,15 +18,17 @@ fun SettingsScreen(
     modifier: Modifier,
     viewModel: SettingsViewModel
 ) {
+    val isDark = isSystemInDarkTheme()
     Column(
         modifier = modifier
+            .background(color = MaterialTheme.colorScheme.background)
     ) {
         SettingsBlock(
             text = "Appearance"
         ) {
             CheckboxOption(
                 text = "Dark theme",
-                checkedState = MutableStateFlow(false),
+                checkedState = flow { emit(isDark) },
                 onCheck = { },
                 modifier = Modifier.fillMaxWidth()
             )

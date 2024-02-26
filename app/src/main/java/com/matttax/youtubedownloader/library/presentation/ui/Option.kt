@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
 
 @Composable
 fun Option(resId: Int, onClick: () -> Unit = {}) {
@@ -28,6 +29,8 @@ fun Option(resId: Int, onClick: () -> Unit = {}) {
             .clickable { onClick() },
         painter = painterResource(id = resId),
         contentDescription = null,
-        colorFilter = ColorFilter.tint(color = Color.Black)
+        colorFilter = ColorFilter.tint(
+            color = MaterialTheme.colorScheme.onPrimary
+        )
     )
 }

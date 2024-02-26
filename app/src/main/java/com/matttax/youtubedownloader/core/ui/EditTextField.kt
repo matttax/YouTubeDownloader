@@ -1,9 +1,11 @@
 package com.matttax.youtubedownloader.core.ui
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -33,9 +35,12 @@ fun EditTextField(
         shape = RoundedCornerShape(20),
         colors = TextFieldDefaults.colors(
             focusedIndicatorColor = YouTubeRed,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.LightGray.copy(alpha = 0.2f),
+            focusedContainerColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.onBackground,
         ),
-        textStyle = TextStyle.Default.copy(fontSize = 12.sp)
+        textStyle = TextStyle.Default.copy(
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onPrimary
+        )
     )
 }

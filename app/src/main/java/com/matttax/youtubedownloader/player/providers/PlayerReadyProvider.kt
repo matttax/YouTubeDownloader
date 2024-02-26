@@ -1,4 +1,4 @@
-package com.matttax.youtubedownloader.player.listeners
+package com.matttax.youtubedownloader.player.providers
 
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class PlayerReadyProvider(
     private val onReady: () -> Unit,
     private val onUnready: () -> Unit = { }
-): PlayerProviderListener<Boolean> {
+): PlayerProvider<Boolean> {
 
     private val _isPlaying = MutableStateFlow(false)
     override val valueFlow: StateFlow<Boolean>

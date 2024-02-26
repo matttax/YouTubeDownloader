@@ -1,11 +1,11 @@
-package com.matttax.youtubedownloader.player.listeners
+package com.matttax.youtubedownloader.player.providers
 
 import androidx.media3.common.MediaItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class StreamingMediaProvider : PlayerProviderListener<String?> {
+class StreamingMediaProvider : PlayerProvider<String?> {
 
     private val _currentPlayingUri = MutableStateFlow<String?>(null)
     override val valueFlow: StateFlow<String?>

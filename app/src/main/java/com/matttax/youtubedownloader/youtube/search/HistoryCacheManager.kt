@@ -5,10 +5,12 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
 
-class HistoryCacheManager(context: Context) {
+class HistoryCacheManager(
+    context: Context,
+    private val gson: Gson
+) {
 
     private val sharedPrefs = context.getSharedPreferences(CACHE_PREFERENCES, Context.MODE_PRIVATE)
-    private val gson = Gson()
 
     var lastQuery: String? = null
         private set

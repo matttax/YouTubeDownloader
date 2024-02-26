@@ -42,7 +42,7 @@ fun PlaylistItem(
                     .background(
                         shape = CircleShape,
                         color = if (!isSystemInDarkTheme())
-                            MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.3f)
+                            MaterialTheme.colorScheme.onSecondary.copy(alpha = 0.1f)
                         else MaterialTheme.colorScheme.onBackground
                     )
                     .padding(5.dp),

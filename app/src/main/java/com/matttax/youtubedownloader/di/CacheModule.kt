@@ -1,6 +1,7 @@
 package com.matttax.youtubedownloader.di
 
 import android.content.Context
+import com.google.gson.Gson
 import com.matttax.youtubedownloader.youtube.search.HistoryCacheManager
 import com.matttax.youtubedownloader.youtube.search.SearchCache
 import dagger.Module
@@ -16,8 +17,17 @@ class CacheModule {
 
     @Provides
     @Singleton
-    fun provideHistoryCacheManager(@ApplicationContext applicationContext: Context): HistoryCacheManager {
-        return HistoryCacheManager(applicationContext)
+    fun provideGson(): Gson {
+        return Gson()
+    }
+
+    @Provides
+    @Singleton
+    fun provideHistoryCacheManager(
+        @ApplicationContext applicationContext: Context,
+        gson: Gson
+    ): HistoryCacheManager {
+        return HistoryCacheManager(applicationContext, gson)
     }
 
     @Provides

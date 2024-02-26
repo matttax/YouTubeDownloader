@@ -111,6 +111,14 @@ class SearchViewModel @Inject constructor(
             } catch (searchEx: SearchException.SearchFailedException) {
                 YoutubeSearchState.NetworkError
             }
+            if (text == SearchVideosUseCase.RESTORE_SEARCH_RESULTS) {
+                searchVideosUseCase.initialQuery
+                    ?.takeIf { _searchText.value != it }
+                    ?.apply {
+                        _searchText.value = this
+                        lastSearchedText = this
+                    }
+            }
         }
     }
 
@@ -139,16 +147,18 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    fun onExtractData(id: String) = viewModelScope.launch {
-        _currentStreamable.value = null
-        _currentStreamable.value = withContext(Dispatchers.IO) {
-            try {
-                extractDataUseCase(id).also {
-                    it.tryPlay()
-                }
-            } catch (nullEx: NullPointerException) { null }
+    fun onExtractData(id: String) {
+        viewModelScope.launch {
+            _currentStreamable.value = null
+            _currentStreamable.value = withContext(Dispatchers.IO) {
+                try {
+                    extractDataUseCase(id).also {
+                        it.tryPlay()
+                    }
+                } catch (nullEx: NullPointerException) { null }
+            }
+            _uriSelectionState.value = getInitialSelectionState()
         }
-        _uriSelectionState.value = getInitialSelectionState()
     }
 
     fun onDownload() {
@@ -168,7 +178,7 @@ class SearchViewModel @Inject constructor(
                         isCompleted = true
                     )
                 }
-                addToRepo(currentMetadata, format)
+                addToRepository(currentMetadata, format)
             }.launchIn(viewModelScope)
         } ?: noStreamableCrash()
     }
@@ -376,7 +386,7 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    private fun addToRepo(
+    private fun addToRepository(
         metadata: YoutubeVideoMetadata,
         format: Format
     ) = viewModelScope.launch(Dispatchers.IO) {
@@ -403,25 +413,27 @@ class SearchViewModel @Inject constructor(
         throw UnsupportedOperationException("No video is selected")
     }
 
-    private suspend fun YoutubeStreamable.tryPlay() = viewModelScope.launch {
-        try {
-            val newFormat = when {
-                videoFormats.isNotEmpty() -> videoFormats.first()
-                audioFormats.isNotEmpty() -> audioFormats.first()
-                else -> throw NoSuchElementException()
+    private fun YoutubeStreamable.tryPlay() {
+        viewModelScope.launch {
+            try {
+                val newFormat = when {
+                    videoFormats.isNotEmpty() -> videoFormats.first()
+                    audioFormats.isNotEmpty() -> audioFormats.first()
+                    else -> throw NoSuchElementException()
+                }
+                playerDelegate.setStreamingOptions(getStreamingOptions())
+                playerDelegate.play(
+                    format = newFormat,
+                    item = metadata.toPlayerMediaMetadata()
+                )
+            } catch (noElement: NoSuchElementException) {
+                val loadingError = if (metadata.isLive) {
+                    LoadingError.NoStreamableLinkFound("Lives cannot be streamed")
+                } else if (metadata.isMovie == true) {
+                    LoadingError.NoStreamableLinkFound("Not enough rights to stream movies")
+                } else LoadingError.NoStreamableLinkFound()
+                loadingErrorChanel.send(loadingError)
             }
-            playerDelegate.setStreamingOptions(getStreamingOptions())
-            playerDelegate.play(
-                format = newFormat,
-                item = metadata.toPlayerMediaMetadata()
-            )
-        } catch (noElement: NoSuchElementException) {
-            val loadingError = if (metadata.isLive) {
-                LoadingError.NoStreamableLinkFound("Lives cannot be streamed")
-            } else if (metadata.isMovie == true) {
-                LoadingError.NoStreamableLinkFound("Not enough rights to stream movies")
-            } else LoadingError.NoStreamableLinkFound()
-            loadingErrorChanel.send(loadingError)
         }
     }
 

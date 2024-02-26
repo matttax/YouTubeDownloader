@@ -8,9 +8,17 @@ import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
 class SearchVideosUseCase(
     private val videoSearcher: VideoSearcher
 ) {
+
+    var initialQuery: String? = null
+        private set
+
     fun executeSearch(text: String, config: SearchConfig): List<YoutubeVideoMetadata> {
         return when(text) {
-            RESTORE_SEARCH_RESULTS -> videoSearcher.loadInitial()
+            RESTORE_SEARCH_RESULTS -> {
+                val (query, result) = videoSearcher.loadInitial()
+                initialQuery = query
+                result
+            }
             REFRESH_SEARCH_RESULTS -> videoSearcher.refresh()
             else -> videoSearcher.search(text, config)
         }

@@ -6,38 +6,44 @@ import com.github.kiulian.downloader.downloader.request.RequestSearchResult
 import com.github.kiulian.downloader.model.search.SearchResult
 import com.github.kiulian.downloader.model.search.field.TypeField
 import com.matttax.youtubedownloader.core.VideoSearcher
-import com.matttax.youtubedownloader.core.config.Duration
-import com.matttax.youtubedownloader.core.config.SearchConfig
-import com.matttax.youtubedownloader.core.config.Uploaded
 import com.matttax.youtubedownloader.core.config.ConfigMapper.toYoutubeDuration
 import com.matttax.youtubedownloader.core.config.ConfigMapper.toYoutubeSorting
 import com.matttax.youtubedownloader.core.config.ConfigMapper.toYoutubeUploaded
+import com.matttax.youtubedownloader.core.config.Duration
+import com.matttax.youtubedownloader.core.config.SearchConfig
+import com.matttax.youtubedownloader.core.config.Uploaded
 import com.matttax.youtubedownloader.core.model.YoutubeVideoMetadata
 import com.matttax.youtubedownloader.core.model.mappers.VideoDataMapper.toYoutubeVideoMetadata
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.concurrent.thread
 
 class VideoSearcherImpl(
     private val downloader: YoutubeDownloader,
     private val searchCache: SearchCache
 ) : VideoSearcher {
 
+    private val executorService: ExecutorService = Executors.newSingleThreadExecutor()
     private var _result = AtomicReference<SearchResult?>(null)
 
-    override fun loadInitial(): List<YoutubeVideoMetadata> {
-        searchCache.getCachedQueryText()?.let {
-            thread {
+    override fun loadInitial(): Pair<String, List<YoutubeVideoMetadata>> {
+        val lastQuery = searchCache.getCachedQueryText()
+        lastQuery?.let {
+            executorService.execute {
                 try {
                     search(it, SearchConfig())
                 } catch (ex: Exception) {}
             }
         }
-        return searchCache.getCachedResult() ?: search("", SearchConfig())
+        return searchCache.getCachedResult()
+            ?.let {
+                (lastQuery ?: DEFAULT_INITIAL_QUERY) to it
+            } ?: (DEFAULT_INITIAL_QUERY to search("", SearchConfig()))
     }
 
     @Synchronized
     override fun search(text: String, config: SearchConfig): List<YoutubeVideoMetadata> {
-        searchCache.getQueryResult(text)?.let {
+        searchCache.getQueryResult(text, config)?.let {
             _result.set(it)
         } ?: run {
             val request = buildRequest(text, config)
@@ -45,14 +51,22 @@ class VideoSearcherImpl(
                 downloader
                     .search(request)
                     .data()
-                    .also { it?.let { cache -> searchCache.putResult(text, cache) } }
+                    .also { result ->
+                        result?.let { cache ->
+                            searchCache.putResult(text, config, cache)
+                        }
+                    }
             )
         }
         return extractMetadata().also { searchCache.cacheResults(text, it) }
     }
 
     override fun refresh(): List<YoutubeVideoMetadata> {
-        searchCache.clear(searchCache.getCachedQueryText())
+        searchCache.getCachedQueryText()?.let {
+            searchCache.clear(it)
+        } ?: run {
+            searchCache.clearAllQueries()
+        }
         return search(searchCache.getCachedQueryText() ?: "", SearchConfig())
     }
 
@@ -90,4 +104,7 @@ class VideoSearcherImpl(
         } ?: throw SearchException.SearchFailedException()
     }
 
+    companion object {
+        const val DEFAULT_INITIAL_QUERY = ""
+    }
 }

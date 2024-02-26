@@ -15,6 +15,7 @@ import com.matttax.youtubedownloader.player.model.PlayerMediaMetadata
 import com.matttax.youtubedownloader.settings.SettingsManager
 import com.matttax.youtubedownloader.settings.model.PlayerSettings
 import com.matttax.youtubedownloader.settings.model.SearchSettings
+import com.matttax.youtubedownloader.youtube.download.DownloadingItem
 import com.matttax.youtubedownloader.youtube.download.MediaDownloader
 import com.matttax.youtubedownloader.youtube.presentation.mappers.getStreamingOptions
 import com.matttax.youtubedownloader.youtube.presentation.states.DownloadState
@@ -26,6 +27,7 @@ import com.matttax.youtubedownloader.youtube.usecases.ExtractDataUseCase
 import com.matttax.youtubedownloader.youtube.usecases.SearchVideosUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -51,6 +53,7 @@ class SearchViewModel @Inject constructor(
     private lateinit var playerSettings: PlayerSettings
     private val downloadingCache =
         Collections.synchronizedMap(HashMap<String, MutableStateFlow<DownloadState>>())
+    private val currentDownloading = MutableStateFlow<DownloadingItem?>(null)
 
     private val _searchState = MutableStateFlow<YoutubeSearchState>(
         YoutubeSearchState.Results(emptyList())
@@ -79,6 +82,7 @@ class SearchViewModel @Inject constructor(
 
     init {
         onSearch(SearchVideosUseCase.RESTORE_SEARCH_RESULTS)
+        observeDownloadingProcess()
     }
 
     override fun onCleared() {
@@ -165,21 +169,7 @@ class SearchViewModel @Inject constructor(
         val currentMetadata = _currentStreamable.value?.metadata ?: return
         playerDelegate.playingFormat?.let { format ->
             getMutableDownloadState(currentMetadata.id).update { state -> state.copy(isDownloading = true) }
-            mediaDownloader.download(
-                format = format,
-                title = currentStreamable.value?.metadata?.name ?: "untitled",
-                thumbnailUri = currentMetadata.thumbnailUri
-            ).onEach {
-                getMutableDownloadState(currentMetadata.id).update { state -> state.copy(progress = it) }
-            }.onCompletion {
-                getMutableDownloadState(currentMetadata.id).update { state ->
-                    state.copy(
-                        isDownloading = false,
-                        isCompleted = true
-                    )
-                }
-                addToRepository(currentMetadata, format)
-            }.launchIn(viewModelScope)
+            currentDownloading.value = DownloadingItem(format, currentMetadata)
         } ?: noStreamableCrash()
     }
 
@@ -389,20 +379,56 @@ class SearchViewModel @Inject constructor(
     private fun addToRepository(
         metadata: YoutubeVideoMetadata,
         format: Format
-    ) = viewModelScope.launch(Dispatchers.IO) {
-        with(metadata) {
-            mediaRepository.addMediaItem(
-                MediaItem(
-                    title = name,
-                    author = author,
-                    description = description,
-                    thumbnailUri = mediaDownloader.getThumbnailPath(format.url) ?: thumbnailUri,
-                    hasVideo = format is Format.Video,
-                    durationSeconds = durationSeconds,
-                    path = mediaDownloader.getPath(format.url)
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            with(metadata) {
+                mediaRepository.addMediaItem(
+                    MediaItem(
+                        title = name,
+                        author = author,
+                        description = description,
+                        thumbnailUri = mediaDownloader.getThumbnailPath(format.url) ?: thumbnailUri,
+                        hasVideo = format is Format.Video,
+                        durationSeconds = durationSeconds,
+                        path = mediaDownloader.getPath(format.url)
+                    )
                 )
-            )
+            }
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeDownloadingProcess() {
+        currentDownloading
+            .filterNotNull()
+            .flatMapMerge {
+                val id = it.metadata.id
+                mediaDownloader.download(
+                    format = it.format,
+                    thumbnailUri = it.metadata.thumbnailUri,
+                    title = it.metadata.name
+                ).onStart {
+                    addToRepository(
+                        it.metadata,
+                        it.format
+                    )
+                }.onCompletion {
+                    getMutableDownloadState(id).update { state ->
+                        state.copy(
+                            isDownloading = false,
+                            isCompleted = true
+                        )
+                    }
+                }
+            }.combine(
+                _currentStreamable
+                    .filterNotNull()
+                    .map { it.metadata }
+            ) { progress, metadata ->
+                getMutableDownloadState(metadata.id).update { state ->
+                    state.copy(progress = progress)
+                }
+            }.launchIn(viewModelScope)
     }
 
     private fun notifyNoStreamableLink() {

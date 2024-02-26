@@ -44,9 +44,7 @@ class MediaDownloader @Inject constructor(
         val downloadId = downloadManager.enqueue(request)
         currentDownloading.edit().putBoolean(downloadId.toString(), false).apply()
         downloadedMediaPaths[format.url] = internalPath
-        if (thumbnailUri != null) {
-            downloadThumbnail(format.url, title, thumbnailUri)
-        }
+        thumbnailUri?.let { downloadThumbnail(format.url, title, thumbnailUri) }
         return progressFlow(downloadId)
     }
 

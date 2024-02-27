@@ -59,10 +59,12 @@ class PlayerDelegate @Inject constructor(
                 _player = controllerFuture.get().apply {
                     prepare()
                     if (shuffleModeEnabled) shuffled = true
-                    streamingMediaProvider.notifyValueChanged(currentMediaItem?.mediaId)
-                    playerReadyProvider.notifyValueChanged(isPlaying)
                     addListener(playerReadyProvider)
                     addListener(streamingMediaProvider)
+                    currentMediaItem?.mediaId?.let {
+                        streamingMediaProvider.notifyValueChanged(it)
+                        playerReadyProvider.notifyValueChanged(isPlaying)
+                    }
                 }
             },
             MoreExecutors.directExecutor()
@@ -105,11 +107,7 @@ class PlayerDelegate @Inject constructor(
             playlist.forEach { playerMediaMetadata ->
                 MediaItem.Builder()
                     .setUri(Uri.parse(playerMediaMetadata.contentUri ?: format?.url))
-                    .setMediaId(
-                        playerMediaMetadata.contentUri
-                            .also { streamingMediaProvider.notifyValueChanged(it) }
-                            ?: ""
-                    )
+                    .setMediaId(playerMediaMetadata.contentUri ?: "")
                     .setMediaMetadata(
                         MediaMetadata.Builder()
                             .setArtist(playerMediaMetadata.author)
@@ -143,8 +141,6 @@ class PlayerDelegate @Inject constructor(
 
     fun pause() {
         _player?.pause()
-        playerReadyProvider.notifyValueChanged(false)
-        streamingMediaProvider.notifyValueChanged(null)
     }
 
     fun resume() = _player?.play()

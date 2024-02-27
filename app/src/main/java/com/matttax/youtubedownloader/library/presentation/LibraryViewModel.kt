@@ -62,7 +62,7 @@ class LibraryViewModel @Inject constructor(
     private val selectedPlaylistId = MutableStateFlow<Int?>(null)
     private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1)
 
-    val playlistName = MutableStateFlow("All media")
+    val playlistName = MutableStateFlow(UNCATEGORIZED_MEDIA_PLAYLIST_NAME)
 
     private var playerQueueDelegate: PlayerQueueDelegate? = null
 
@@ -119,7 +119,7 @@ class LibraryViewModel @Inject constructor(
 
     fun onAddPlaylist(name: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            playlistRepository.addPlaylist(name)
+            playlistRepository.addPlaylist(preprocessPlaylistName(name))
         }
     }
 
@@ -130,7 +130,7 @@ class LibraryViewModel @Inject constructor(
     fun onRenameCurrentPlaylist(newName: String) {
         selectedPlaylistId.value?.let {
             viewModelScope.launch(Dispatchers.IO) {
-                playlistRepository.renamePlaylist(it, newName)
+                playlistRepository.renamePlaylist(it, preprocessPlaylistName(newName))
             }
         }
     }
@@ -251,6 +251,12 @@ class LibraryViewModel @Inject constructor(
         }
     }
 
+    private fun preprocessPlaylistName(newName: String): String {
+        return if (newName == UNCATEGORIZED_MEDIA_PLAYLIST_NAME) {
+            "$newName 1"
+        } else newName
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeMedia() {
         selectedPlaylistId
@@ -277,7 +283,7 @@ class LibraryViewModel @Inject constructor(
                     playlistRepository.getPlaylistById(it)
                 }
             }.onEach {
-                playlistName.value = it?.name ?: "All media"
+                playlistName.value = it?.name ?: UNCATEGORIZED_MEDIA_PLAYLIST_NAME
             }.launchIn(viewModelScope)
     }
 
@@ -300,6 +306,10 @@ class LibraryViewModel @Inject constructor(
                     selectedPlaylists.clear()
                 }
             }.launchIn(viewModelScope)
+    }
+
+    companion object {
+        const val UNCATEGORIZED_MEDIA_PLAYLIST_NAME = "All media"
     }
 }
 

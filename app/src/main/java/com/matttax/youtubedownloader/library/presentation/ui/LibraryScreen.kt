@@ -123,13 +123,13 @@ fun LibraryScreen(
         }
     }
 
-    BackHandler(enabled = isMediaSelected || name != "All media" || fullscreen) {
+    BackHandler(enabled = isMediaSelected || name != LibraryViewModel.UNCATEGORIZED_MEDIA_PLAYLIST_NAME || fullscreen) {
         if (fullscreen) {
             context.setScreenOrientation(Configuration.ORIENTATION_PORTRAIT)
             fullscreen = false.also { onFullscreenEnter(it) }
         } else if (isMediaSelected) {
             viewModel.onStopPlayback()
-        } else if (name != "All media") {
+        } else if (name != LibraryViewModel.UNCATEGORIZED_MEDIA_PLAYLIST_NAME) {
             viewModel.onChoosePlaylist(null)
         }
     }

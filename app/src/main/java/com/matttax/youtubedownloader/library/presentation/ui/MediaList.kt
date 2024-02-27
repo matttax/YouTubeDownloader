@@ -58,7 +58,7 @@ fun MediaList(
                 }
                 Title(text = titleText)
                 Spacer(Modifier.weight(1f))
-                if (titleText != "All media") {
+                if (titleText != LibraryViewModel.UNCATEGORIZED_MEDIA_PLAYLIST_NAME) {
                     Option(resId = R.drawable.ic_edit) {
                         editingTitle = true
                     }

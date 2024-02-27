@@ -13,7 +13,7 @@ interface PlaylistDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertPlaylist(playlist: PlaylistEntity)
 
-    @Query("SELECT * FROM playlist")
+    @Query("SELECT * FROM playlist ORDER BY id DESC")
     fun getAll(): Flow<List<PlaylistEntity>>
 
     @Query("SELECT * FROM playlist WHERE id=:id")

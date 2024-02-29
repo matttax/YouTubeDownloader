@@ -11,7 +11,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -34,11 +33,13 @@ import com.matttax.youtubedownloader.navigation.ui.BottomNavigationBar
 import com.matttax.youtubedownloader.navigation.ui.NavigationAnimations
 import com.matttax.youtubedownloader.navigation.ui.TabNameBar
 import com.matttax.youtubedownloader.player.PlaybackService
+import com.matttax.youtubedownloader.player.PlayerDelegateProvider
 import com.matttax.youtubedownloader.settings.presentation.SettingsViewModel
 import com.matttax.youtubedownloader.settings.presentation.ui.SettingsScreen
 import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
 import com.matttax.youtubedownloader.youtube.presentation.ui.YoutubeSearchScreen
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -49,16 +50,19 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var playbackService: PlaybackService
 
+    @Inject
+    lateinit var playerDelegateProvider: PlayerDelegateProvider
+
     private val connection = object : ServiceConnection {
 
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as PlaybackService.LocalBinder
             playbackService = binder.getService()
-            libraryViewModel.setPlayerQueueDelegate(playbackService)
+            playerDelegateProvider.playerDelegate = playbackService
         }
 
-        override fun onServiceDisconnected(arg0: ComponentName) {
-            libraryViewModel.removePlayerQueueCallback()
+        override fun onServiceDisconnected(componentName: ComponentName) {
+            playerDelegateProvider.playerDelegate = null
         }
     }
 
@@ -105,7 +109,6 @@ class MainActivity : ComponentActivity() {
                             enterTransition = NavigationAnimations.enterTransition,
                             exitTransition = NavigationAnimations.exitTransition
                         ) {
-                            searchViewModel.onQuit()
                             LibraryScreen(
                                 modifier = Modifier
                                     .fillMaxHeight(if (fullscreen) 0.95f else 1f)
@@ -124,7 +127,6 @@ class MainActivity : ComponentActivity() {
                             enterTransition = NavigationAnimations.enterTransition,
                             exitTransition = NavigationAnimations.exitTransition
                         ) {
-                            searchViewModel.onQuit()
                             SettingsScreen(
                                 modifier = Modifier.fillMaxHeight(0.95f),
                                 viewModel = settingsViewModel
@@ -133,8 +135,9 @@ class MainActivity : ComponentActivity() {
                     }
                     if (fullscreen) {
                         BottomNavigationBar(
-                            navController,
-                            ROUTES_MAP[initialItem] ?: BottomNavigationItems.LIBRARY
+                            modifier = Modifier.fillMaxSize(),
+                            navController = navController,
+                            initialItem = ROUTES_MAP[initialItem] ?: BottomNavigationItems.LIBRARY
                         )
                     }
                 }
@@ -162,7 +165,7 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         super.onStop()
         unbindService(connection)
-        libraryViewModel.removePlayerQueueCallback()
+        playerDelegateProvider.playerDelegate = null
     }
 
     companion object {

@@ -30,7 +30,7 @@ fun MediaList(
     val mediaList by viewModel.mediaList.collectAsState()
     val playlists by viewModel.playlists.collectAsState()
     val currentPlayingUri by viewModel.currentPlayingUri.collectAsState()
-    val isPlaying by viewModel.isPlaying.collectAsState(false)
+    val isPlaying by viewModel.isPlaying.collectAsState()
 
     var dialogOnScreen by remember { mutableStateOf<DialogOnScreen>(DialogOnScreen.None) }
     var editingTitle by remember { mutableStateOf(false) }

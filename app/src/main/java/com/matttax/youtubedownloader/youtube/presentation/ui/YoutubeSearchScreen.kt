@@ -31,7 +31,6 @@ import com.matttax.youtubedownloader.youtube.presentation.SearchViewModel
 import com.matttax.youtubedownloader.youtube.presentation.states.PagingState
 import com.matttax.youtubedownloader.youtube.presentation.states.YoutubeSearchState
 import kotlinx.coroutines.flow.collectLatest
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -242,7 +241,7 @@ fun YoutubeSearchScreen(
         if (isFocused) {
             focusManager.clearFocus()
         } else if (currentStreamable != null) {
-            viewModel.onStopPlaying()
+            viewModel.onStopPlayback()
             selectedVideo = null
         }
     }

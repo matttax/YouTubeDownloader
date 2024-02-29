@@ -1,10 +1,7 @@
 package com.matttax.youtubedownloader.navigation.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,25 +10,26 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.matttax.youtubedownloader.R
 import com.matttax.youtubedownloader.navigation.BottomNavigationItems
 
 @Composable
-fun BottomNavigationBar(navController: NavController, initialItem: BottomNavigationItems) {
+fun BottomNavigationBar(
+    modifier: Modifier,
+    navController: NavController,
+    initialItem: BottomNavigationItems
+) {
     Row(
-        modifier = Modifier
-            .background(color = MaterialTheme.colorScheme.background)
-            .fillMaxWidth(),
+        modifier = modifier
+            .background(color = MaterialTheme.colorScheme.background),
         verticalAlignment = Alignment.Top
     ) {
         var selectedBottomItem by rememberSaveable { mutableStateOf(initialItem) }
 
         Spacer(modifier = Modifier.weight(0.4f))
         BottomNavigationItem(
-            modifier = Modifier
-                .weight(0.3f),
+            modifier = Modifier.weight(0.3f),
             drawableId = R.drawable.ic_library,
             selectionCondition = { selectedBottomItem == BottomNavigationItems.LIBRARY },
             onClick = {
@@ -43,9 +41,7 @@ fun BottomNavigationBar(navController: NavController, initialItem: BottomNavigat
             }
         )
         BottomNavigationItem(
-            modifier = Modifier
-                .weight(0.3f)
-                .offset(y = (-7).dp),
+            modifier = Modifier.weight(0.3f),
             drawableId = R.drawable.ic_youtube,
             selectionCondition = { selectedBottomItem == BottomNavigationItems.YOUTUBE },
             onClick = {
@@ -57,8 +53,7 @@ fun BottomNavigationBar(navController: NavController, initialItem: BottomNavigat
             }
         )
         BottomNavigationItem(
-            modifier = Modifier
-                .weight(0.3f),
+            modifier = Modifier.weight(0.3f),
             drawableId = R.drawable.ic_settings,
             selectionCondition = { selectedBottomItem == BottomNavigationItems.SETTINGS },
             onClick = {

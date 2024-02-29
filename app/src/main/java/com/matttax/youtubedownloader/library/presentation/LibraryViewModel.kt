@@ -10,8 +10,8 @@ import com.matttax.youtubedownloader.library.repositories.model.MediaItem
 import com.matttax.youtubedownloader.library.repositories.model.Playlist
 import com.matttax.youtubedownloader.library.repositories.MediaRepository
 import com.matttax.youtubedownloader.library.repositories.PlaylistRepository
-import com.matttax.youtubedownloader.player.PlayerQueueDelegate
 import com.matttax.youtubedownloader.player.PlayerDelegate
+import com.matttax.youtubedownloader.player.PlayerDelegateProvider
 import com.matttax.youtubedownloader.player.model.PlayerMediaMetadata
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
@@ -26,7 +26,7 @@ import kotlin.collections.HashMap
 class LibraryViewModel @Inject constructor(
     private val mediaRepository: MediaRepository,
     private val playlistRepository: PlaylistRepository,
-    private val playerDelegate: PlayerDelegate,
+    private val playerDelegateProvider: PlayerDelegateProvider,
 ) : ViewModel() {
 
     val playlists = playlistRepository.getAllPlaylists()
@@ -45,16 +45,6 @@ class LibraryViewModel @Inject constructor(
     private val _playlistDeletionOptions = MutableStateFlow(PlaylistDeletionOptions.NONE)
     val playlistDeletionOptions = _playlistDeletionOptions.asStateFlow()
 
-    val currentPlayingUri = playerDelegate.getCurrentPlayingUri()
-
-    val isPlaying = playerDelegate.getIsPlaying()
-        .onEach {
-            if (it && !_isMediaItemSelected.value) {
-                _isMediaItemSelected.value = true
-                playerQueueDelegate?.getQueue()?.let { queue -> forceOrderItems(queue) }
-            }
-        }
-
     private val selectedPlaylists =
         Collections.synchronizedMap(HashMap<Int, MutableStateFlow<Boolean>>())
 
@@ -62,59 +52,71 @@ class LibraryViewModel @Inject constructor(
     private val selectedPlaylistId = MutableStateFlow<Int?>(null)
     private val refreshTrigger = MutableSharedFlow<Unit>(replay = 1)
 
+    private val delegateInited = playerDelegateProvider.isInited
+
     val playlistName = MutableStateFlow(UNCATEGORIZED_MEDIA_PLAYLIST_NAME)
 
-    private var playerQueueDelegate: PlayerQueueDelegate? = null
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val currentPlayingUri = delegateInited
+        .flatMapLatest {
+            playerDelegate?.getCurrentPlayingUri() ?: flow { emit(null) }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val isPlaying = delegateInited
+        .flatMapLatest {
+            playerDelegate?.getIsPlaying() ?: flow { emit(false) }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
         observeMedia()
         observePlaylistName()
         observeMediaItemPlaylists()
         refreshTrigger.tryEmit(Unit)
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        playerDelegate.release()
+        mediaList.combine(
+            isPlaying
+        ) { list, isPlaying ->
+            if (list.isNotEmpty() && isPlaying && !_isMediaItemSelected.value) {
+                _isMediaItemSelected.value = true
+                playerDelegate?.getQueue()?.let { queue ->
+                    forceOrderItems(queue)
+                }
+            }
+        }.launchIn(viewModelScope)
     }
 
     fun getExoInstance(): Player {
-        return playerDelegate.player
-    }
-
-    fun setPlayerQueueDelegate(delegate: PlayerQueueDelegate) {
-        playerQueueDelegate = delegate
-    }
-
-    fun removePlayerQueueCallback() {
-        playerQueueDelegate = null
+        return playerDelegate?.getPlayerInstance()!!
     }
 
     fun onSetItem(itemPosition: Int) {
         _isMediaItemSelected.value = true
-        if (!playerDelegate.shuffled) {
-            playerDelegate.play(
-                playlist = _mediaList.value.map { it.toPlayerMediaMetadata() },
-                startPosition = itemPosition
-            )
-            playerQueueDelegate?.initQueue(size = mediaList.value.size, shuffle = false)
-        } else {
-            playerQueueDelegate?.seekInQueue(itemPosition)
-        }
+        playerDelegate?.play(
+            playlist = _mediaList.value.map { it.toPlayerMediaMetadata() },
+            startPosition = itemPosition,
+            shuffled = false,
+            savePosition = false,
+            format = null
+        )
     }
 
     fun onPlayShuffled() {
         _isMediaItemSelected.value = true
-        playerQueueDelegate?.apply {
-            playShuffled(_mediaList.value.map { it.toPlayerMediaMetadata() })
+        playerDelegate?.apply {
+            play(
+                playlist = _mediaList.value.map { it.toPlayerMediaMetadata() },
+                startPosition = 0,
+                shuffled = true,
+                savePosition = false,
+                format = null
+            )
             getQueue()?.let { forceOrderItems(it) }
         }
-        playerDelegate.notifyShuffled()
     }
 
     fun onStopPlayback() {
         _isMediaItemSelected.value = false
-        playerDelegate.pause()
+        playerDelegate?.pause()
     }
 
     fun onAddPlaylist(name: String) {
@@ -199,13 +201,12 @@ class LibraryViewModel @Inject constructor(
     fun onItemsShifted(from: Int, to: Int) {
         updateMediaList { shift(from, to) }
         viewModelScope.launch { listEventChannel.send(ListDiff.NoDifference) }
-        playerQueueDelegate?.shiftItemInQueue(from, to)
+        playerDelegate?.shiftItemInQueue(from, to)
     }
 
-    fun onPausePlayback() = playerDelegate.pause()
+    fun onPausePlayback() = playerDelegate?.pause()
 
-    fun onResumePlayback() = playerDelegate.resume()
-
+    fun onResumePlayback() = playerDelegate?.resume()
 
     private fun forceOrderItems(newOrder: List<Int>) {
         val oldList = _mediaList.value
@@ -307,6 +308,9 @@ class LibraryViewModel @Inject constructor(
                 }
             }.launchIn(viewModelScope)
     }
+
+    private val playerDelegate: PlayerDelegate?
+        get() = playerDelegateProvider.playerDelegate
 
     companion object {
         const val UNCATEGORIZED_MEDIA_PLAYLIST_NAME = "All media"

@@ -8,8 +8,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.atomic.AtomicBoolean
 
 class PlayerReadyProvider(
-    private val onReady: () -> Unit,
-    private val onUnready: () -> Unit = { }
+    private val onStateChanged: (Boolean) -> Unit
 ): PlayerProvider<Boolean> {
 
     private val _isPlaying = MutableStateFlow(false)
@@ -20,8 +19,8 @@ class PlayerReadyProvider(
 
     override fun onPlaybackStateChanged(playbackState: Int) {
         when(playbackState) {
-            Player.STATE_READY -> onReady.invoke()
-            Player.STATE_IDLE -> onUnready.invoke()
+            Player.STATE_READY -> onStateChanged(true)
+            Player.STATE_IDLE -> onStateChanged(false)
             else -> {}
         }
     }
